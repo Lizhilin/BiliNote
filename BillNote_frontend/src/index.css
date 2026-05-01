@@ -146,3 +146,23 @@ html, body, #root {
     @apply bg-background text-foreground;
   }
 }
+
+/* 移动端 markdown 内容防溢出 */
+.markdown-body {
+  overflow-x: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.markdown-body pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.markdown-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+}

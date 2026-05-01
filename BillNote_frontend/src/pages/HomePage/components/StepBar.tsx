@@ -15,7 +15,7 @@ const StepBar: FC<StepBarProps> = ({ steps, currentStep }) => {
   const currentIndex = steps.findIndex(step => step.key === currentStep)
 
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between gap-1 px-2 md:gap-0 md:px-0">
       {steps.map((step, index) => {
         const isActive = index <= currentIndex
         const isCurrent = index === currentIndex
@@ -25,7 +25,7 @@ const StepBar: FC<StepBarProps> = ({ steps, currentStep }) => {
             {/* 圆圈或者Lottie */}
             <div className="relative flex flex-col items-center justify-center">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold md:h-8 md:w-8 md:text-xs ${
                   isActive ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'
                 }`}
               >
@@ -38,11 +38,11 @@ const StepBar: FC<StepBarProps> = ({ steps, currentStep }) => {
             </div>
 
             {/* 步骤名称 */}
-            <div className="mt-4 text-center text-xs text-gray-700">{step.label}</div>
+            <div className="mt-2 text-center text-[10px] leading-tight text-gray-700 md:mt-4 md:text-xs">{step.label}</div>
 
             {/* 连接线 */}
 
-            <div className={`h-1 w-full ${isActive ? 'bg-primary' : 'bg-gray-300'}`}></div>
+            <div className={`h-0.5 w-full md:h-1 ${isActive ? 'bg-primary' : 'bg-gray-300'}`}></div>
           </div>
         )
       })}

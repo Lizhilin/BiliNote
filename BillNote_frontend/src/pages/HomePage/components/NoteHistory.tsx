@@ -75,7 +75,7 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
             onChange={e => setSearch(e.target.value)}
         />
       </div>
-      <div className="flex flex-col gap-2 overflow-hidden">
+      <div className="flex flex-col gap-2">
         {filteredTasks.map(task => (
           <div
             key={task.id}

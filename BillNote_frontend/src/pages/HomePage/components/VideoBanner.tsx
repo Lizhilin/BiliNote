@@ -46,23 +46,23 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
       </div>
 
       {/* 内容层 */}
-      <div className="relative flex items-center gap-4 px-5 py-4">
+      <div className="relative flex items-center gap-3 px-3 py-3 md:gap-4 md:px-5 md:py-4">
         {/* 封面缩略图 */}
         {coverUrl && (
           <img
             src={coverUrl}
             alt={title}
             referrerPolicy="no-referrer"
-            className="h-16 w-28 shrink-0 rounded-md object-cover shadow-md"
+            className="h-14 w-24 shrink-0 rounded-md object-cover shadow-md md:h-16 md:w-28"
           />
         )}
 
         {/* 文字信息 */}
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-bold text-white" title={title}>
+          <h2 className="line-clamp-2 text-sm font-bold text-white md:line-clamp-none md:text-base" title={title}>
             {title}
           </h2>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-white/70">
+          <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-white/70 md:gap-2 md:text-sm">
             {uploader && <span>{uploader}</span>}
             {uploader && platform && <span className="text-white/40">·</span>}
             {platform && <span>{platform}</span>}
@@ -75,10 +75,10 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
             href={originalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/25"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/25 md:gap-1.5 md:px-3 md:py-1.5"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span>原视频</span>
+            <ExternalLink className="h-3 w-3 md:h-3.5 md:w-3.5" />
+            <span className="hidden md:inline">原视频</span>
           </a>
         )}
       </div>

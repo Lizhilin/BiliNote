@@ -87,12 +87,12 @@ export function MarkdownHeader({
   }
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-white/95 px-4 py-2 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-white/95 px-2 py-2 backdrop-blur-sm md:gap-3 md:px-4">
       {/* 左侧区域：版本 + 标签 + 创建时间 */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
         {isMultiVersion && (
           <Select value={currentVerId} onValueChange={setCurrentVerId}>
-            <SelectTrigger className="h-8 w-[160px] text-sm">
+            <SelectTrigger className="h-8 w-[130px] text-sm md:w-[160px]">
               <div className="flex items-center">
                 {(() => {
                   const idx = currentTask?.markdown.findIndex(v => v.ver_id === currentVerId)
@@ -122,12 +122,12 @@ export function MarkdownHeader({
         </Badge>
 
         {createAt && (
-          <div className="text-muted-foreground text-sm">创建时间: {formatDate(createAt)}</div>
+          <div className="text-muted-foreground hidden text-sm md:block">创建时间: {formatDate(createAt)}</div>
         )}
       </div>
 
       {/* 右侧操作按钮 */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 md:gap-1">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -139,8 +139,8 @@ export function MarkdownHeader({
                 size="sm"
                 className="h-8 px-2"
               >
-                <BrainCircuit className="mr-1.5 h-4 w-4" />
-                <span className="text-sm">{viewMode == 'preview' ? '思维导图' : 'markdown'}</span>
+                <BrainCircuit className="h-4 w-4" />
+                <span className="hidden text-sm md:inline">{viewMode == 'preview' ? '思维导图' : 'markdown'}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>思维导图</TooltipContent>
@@ -150,8 +150,8 @@ export function MarkdownHeader({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button onClick={handleCopy} variant="ghost" size="sm" className="h-8 px-2">
-                <Copy className="mr-1.5 h-4 w-4" />
-                <span className="text-sm">{copied ? '已复制' : '复制'}</span>
+                <Copy className="h-4 w-4" />
+                <span className="hidden text-sm md:inline">{copied ? '已复制' : '复制'}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>复制内容</TooltipContent>
@@ -162,8 +162,8 @@ export function MarkdownHeader({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button onClick={onDownload} variant="ghost" size="sm" className="h-8 px-2">
-                <Download className="mr-1.5 h-4 w-4" />
-                <span className="text-sm">导出 Markdown</span>
+                <Download className="h-4 w-4" />
+                <span className="hidden text-sm md:inline">导出</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>下载为 Markdown 文件</TooltipContent>
@@ -181,7 +181,7 @@ export function MarkdownHeader({
                 className="h-8 px-2"
               >
                 {/*<Download className="mr-1.5 h-4 w-4" />*/}
-                <span className="text-sm">原文参照</span>
+                <span className="hidden text-sm md:inline">原文参照</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>原文参照</TooltipContent>
@@ -197,8 +197,8 @@ export function MarkdownHeader({
                   size="sm"
                   className="h-8 px-2"
                 >
-                  <MessageSquare className="mr-1.5 h-4 w-4" />
-                  <span className="text-sm">AI 问答</span>
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="hidden text-sm md:inline">AI 问答</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>基于笔记内容的 AI 问答</TooltipContent>

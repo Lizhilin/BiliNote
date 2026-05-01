@@ -173,12 +173,12 @@ function createMarkdownComponents(baseURL: string) {
       )
     },
     ul: ({ children, ...props }: any) => (
-      <ul className="my-6 ml-6 list-disc [&>li]:mt-2" {...props}>
+      <ul className="my-6 ml-4 list-disc md:ml-6 [&>li]:mt-2" {...props}>
         {children}
       </ul>
     ),
     ol: ({ children, ...props }: any) => (
-      <ol className="my-6 ml-6 list-decimal [&>li]:mt-2" {...props}>
+      <ol className="my-6 ml-4 list-decimal md:ml-6 [&>li]:mt-2" {...props}>
         {children}
       </ol>
     ),
@@ -196,7 +196,7 @@ function createMarkdownComponents(baseURL: string) {
 
       if (!inline && match) {
         return (
-          <div className="group bg-muted relative my-6 overflow-hidden rounded-lg border shadow-sm">
+          <div className="group bg-muted relative my-6 max-w-full overflow-x-auto rounded-lg border shadow-sm">
             <div className="bg-muted text-muted-foreground flex items-center justify-between px-4 py-1.5 text-sm font-medium">
               <div>{match[1].toUpperCase()}</div>
               <button
@@ -239,7 +239,7 @@ function createMarkdownComponents(baseURL: string) {
       )
     },
     table: ({ children, ...props }: any) => (
-      <div className="my-6 w-full overflow-y-auto">
+      <div className="my-6 w-full overflow-x-auto">
         <table className="w-full border-collapse text-sm" {...props}>
           {children}
         </table>
@@ -371,7 +371,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
 
   if (status === 'loading') {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center space-y-4 text-neutral-500">
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-4 text-neutral-500">
         <StepBar steps={steps} currentStep={taskStatus} />
         <Loading className="h-5 w-5" />
         <div className="text-center text-sm">
@@ -384,7 +384,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
 
   if (status === 'idle') {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center space-y-3 text-neutral-500">
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-3 text-neutral-500">
         <Idle />
         <div className="text-center">
           <p className="text-lg font-bold">输入视频链接并点击"生成笔记"</p>
@@ -396,7 +396,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
 
   if (status === 'failed' && !isMultiVersion) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 space-y-3">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 space-y-3">
         <Error />
         <div className="text-center">
           <p className="text-lg font-bold text-red-500">笔记生成失败</p>
@@ -411,7 +411,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <MarkdownHeader
         currentTask={currentTask}
         isMultiVersion={isMultiVersion}
@@ -443,7 +443,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-1 overflow-hidden bg-white py-2">
+        <div className="flex flex-1 overflow-hidden bg-white py-2 md:py-2">
           {selectedContent && selectedContent !== 'loading' && selectedContent !== 'empty' ? (
             <>
               {showChat === 'full' && currentTask ? (
@@ -453,13 +453,11 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
               ) : (
               <>
               <ScrollArea className="min-w-0 flex-1">
-                <div className="px-2">
-                  <VideoBanner
-                    audioMeta={currentTask?.audioMeta}
-                    videoUrl={currentTask?.formData?.video_url}
-                  />
-                </div>
-                <div className={'markdown-body w-full px-2'}>
+                <VideoBanner
+                  audioMeta={currentTask?.audioMeta}
+                  videoUrl={currentTask?.formData?.video_url}
+                />
+                <div className={'markdown-body w-full px-2 md:px-4'}>
                   <ReactMarkdown
                     remarkPlugins={remarkPlugins}
                     rehypePlugins={rehypePlugins}
@@ -470,13 +468,13 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                 </div>
               </ScrollArea>
               {showTranscribe && (
-                <div className={'ml-2 w-2/4'}>
+                <div className={'ml-2 hidden w-2/4 md:block'}>
                   <TranscriptViewer />
                 </div>
               )}
-              {/* 侧边问答模式：markdown + ChatPanel 各占一半 */}
+              {/* 侧边问答模式：移动端全屏，桌面端各占一半 */}
               {showChat === 'half' && currentTask && (
-                <div className="ml-2 h-full w-1/2 shrink-0">
+                <div className="absolute inset-0 z-30 bg-white md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
                   <ChatPanel taskId={currentTask.id} mode="half" onModeChange={setShowChat} />
                 </div>
               )}
