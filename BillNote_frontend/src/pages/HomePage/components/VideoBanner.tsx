@@ -18,10 +18,11 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
   if (!audioMeta) return null
 
   const rawCover = audioMeta.cover_url
-  // 通过后端代理加载封面，避免跨域/Referrer 限制
-  const apiBase = String(import.meta.env.VITE_API_BASE_URL || 'api').replace(/\/$/, '')
+  // 外部 URL 走代理，本地路径直接使用
   const coverUrl = rawCover
-    ? `${apiBase}/image_proxy?url=${encodeURIComponent(rawCover)}`
+    ? rawCover.startsWith('http')
+      ? `/api/image_proxy?url=${encodeURIComponent(rawCover)}`
+      : rawCover
     : ''
   const title = audioMeta.title
   const uploader = audioMeta.raw_info?.uploader || ''

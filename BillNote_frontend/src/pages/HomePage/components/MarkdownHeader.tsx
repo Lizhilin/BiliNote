@@ -115,10 +115,10 @@ export function MarkdownHeader({
         )}
 
         <Badge variant="secondary" className="bg-pink-100 text-pink-700 hover:bg-pink-200">
-          {modelName}
+          {modelName || '笔记'}
         </Badge>
         <Badge variant="secondary" className="bg-cyan-100 text-cyan-700 hover:bg-cyan-200">
-          {styleName}
+          {styleName || '默认'}
         </Badge>
 
         {createAt && (
