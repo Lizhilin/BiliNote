@@ -69,6 +69,11 @@ class BilibiliDownloader(Downloader, ABC):
             ],
             'noplaylist': True,
             'quiet': False,
+            # 网络超时与重试配置（解决 B站 CDN 连接超时问题）
+            'socket_timeout': 60,
+            'retries': 5,
+            'fragment_retries': 5,
+            'extractor_retries': 3,
         }
         if self._cookiefile:
             ydl_opts['cookiefile'] = self._cookiefile
@@ -122,6 +127,11 @@ class BilibiliDownloader(Downloader, ABC):
             'noplaylist': True,
             'quiet': False,
             'merge_output_format': 'mp4',  # 确保合并成 mp4
+            # 网络超时与重试配置（解决 B站 CDN 连接超时问题）
+            'socket_timeout': 60,
+            'retries': 5,
+            'fragment_retries': 5,
+            'extractor_retries': 3,
         }
         if self._cookiefile:
             ydl_opts['cookiefile'] = self._cookiefile
@@ -175,6 +185,10 @@ class BilibiliDownloader(Downloader, ABC):
             'skip_download': True,
             'outtmpl': os.path.join(output_dir, f'{video_id}.%(ext)s'),
             'quiet': True,
+            # 网络超时与重试配置（解决 B站 CDN 连接超时问题）
+            'socket_timeout': 60,
+            'retries': 5,
+            'extractor_retries': 3,
         }
 
         # 通过 CookieConfigManager 注入 B站 Cookie（Netscape cookiefile）

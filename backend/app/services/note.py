@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import List, Optional, Tuple, Union, Any
+from typing import List, Optional, Tuple, Union, Any, Callable
 
 from fastapi import HTTPException
 from pydantic import HttpUrl
@@ -357,6 +358,37 @@ class NoteGenerator:
                 error_message = str(error_message)
         self._update_status(task_id, TaskStatus.FAILED, message=error_message)
 
+    def _with_retry(self, func: Callable, task_id: str, desc: str, max_retries: int = 3, base_delay: float = 5.0) -> Any:
+        """
+        带重试的执行包装器，用于网络下载等不稳定的操作。
+
+        :param func: 要执行的无参可调用对象
+        :param task_id: 任务 ID，用于日志
+        :param desc: 操作描述
+        :param max_retries: 最大重试次数（含首次执行，总尝试次数 = max_retries + 1）
+        :param base_delay: 基础重试延迟（秒），每次重试延迟加倍
+        :return: func 的返回值
+        :raises: 最后一次失败时的异常
+        """
+        last_exc = None
+        for attempt in range(max_retries + 1):
+            try:
+                if attempt > 0:
+                    delay = base_delay * (2 ** (attempt - 1))
+                    logger.info(f"{desc} - 第 {attempt + 1} 次尝试（共 {max_retries + 1} 次），等待 {delay:.0f}s... (task_id={task_id})")
+                    time.sleep(delay)
+                else:
+                    logger.info(f"{desc} - 开始下载... (task_id={task_id})")
+                return func()
+            except Exception as exc:
+                last_exc = exc
+                error_msg = str(exc)[:200]
+                if attempt < max_retries:
+                    logger.warning(f"{desc} - 第 {attempt + 1} 次尝试失败: {error_msg}，将重试... (task_id={task_id})")
+                else:
+                    logger.error(f"{desc} - 所有 {max_retries + 1} 次尝试均失败: {error_msg} (task_id={task_id})")
+        raise last_exc
+
     def _download_media(
         self,
         downloader: Downloader,
@@ -406,12 +438,17 @@ class NoteGenerator:
         if skip_download:
             logger.info("已有字幕，仅提取视频元信息（不下载音视频）")
             try:
-                audio = downloader.download(
-                    video_url=video_url,
-                    quality=quality,
-                    output_dir=output_path,
-                    need_video=False,
-                    skip_download=True,
+                audio = self._with_retry(
+                    lambda: downloader.download(
+                        video_url=video_url,
+                        quality=quality,
+                        output_dir=output_path,
+                        need_video=False,
+                        skip_download=True,
+                    ),
+                    task_id=task_id,
+                    desc="提取视频元信息",
+                    max_retries=2,
                 )
                 audio_cache_file.write_text(
                     json.dumps(asdict(audio), ensure_ascii=False, indent=2),
@@ -431,7 +468,12 @@ class NoteGenerator:
         if need_video:
             try:
                 logger.info("开始下载视频")
-                video_path_str = downloader.download_video(video_url)
+                video_path_str = self._with_retry(
+                    lambda: downloader.download_video(video_url),
+                    task_id=task_id,
+                    desc="视频下载",
+                    max_retries=3,
+                )
                 self.video_path = Path(video_path_str)
                 logger.info(f"视频下载完成：{self.video_path}")
 
@@ -454,11 +496,16 @@ class NoteGenerator:
         # 下载音频
         try:
             logger.info("开始下载音频")
-            audio = downloader.download(
-                video_url=video_url,
-                quality=quality,
-                output_dir=output_path,
-                need_video=need_video,
+            audio = self._with_retry(
+                lambda: downloader.download(
+                    video_url=video_url,
+                    quality=quality,
+                    output_dir=output_path,
+                    need_video=need_video,
+                ),
+                task_id=task_id,
+                desc="音频下载",
+                max_retries=3,
             )
             audio_cache_file.write_text(json.dumps(asdict(audio), ensure_ascii=False, indent=2), encoding="utf-8")
             logger.info(f"音频下载并缓存成功 ({audio_cache_file})")
