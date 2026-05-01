@@ -1,5 +1,6 @@
 import os
 import platform
+import threading
 from enum import Enum
 
 from app.transcriber.groq import GroqTranscriber
@@ -38,9 +39,23 @@ _transcribers = {
     TranscriberType.GROQ: None,
 }
 
+# 并发保护锁（防止模型下载期间重复创建）
+_transcriber_locks = {
+    TranscriberType.FAST_WHISPER: threading.Lock(),
+    TranscriberType.MLX_WHISPER: threading.Lock(),
+    TranscriberType.BCUT: threading.Lock(),
+    TranscriberType.KUAISHOU: threading.Lock(),
+    TranscriberType.GROQ: threading.Lock(),
+}
+
 # 公共实例初始化函数
 def _init_transcriber(key: TranscriberType, cls, *args, **kwargs):
-    if _transcribers[key] is None:
+    if _transcribers[key] is not None:
+        return _transcribers[key]
+    with _transcriber_locks[key]:
+        # 双重检查，防止等待锁期间其他线程已创建好
+        if _transcribers[key] is not None:
+            return _transcribers[key]
         logger.info(f'创建 {cls.__name__} 实例: {key}')
         try:
             _transcribers[key] = cls(*args, **kwargs)

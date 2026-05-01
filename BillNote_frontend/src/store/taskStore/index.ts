@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { delete_task, generateNote } from '@/services/note.ts'
+import { delete_task, generateNote, getTaskHistory } from '@/services/note.ts'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
 
@@ -58,6 +57,7 @@ export interface Task {
 interface TaskStore {
   tasks: Task[]
   currentTaskId: string | null
+  historyLoaded: boolean
   addPendingTask: (taskId: string, platform: string) => void
   updateTaskContent: (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>) => void
   removeTask: (id: string) => void
@@ -65,152 +65,186 @@ interface TaskStore {
   setCurrentTask: (taskId: string | null) => void
   getCurrentTask: () => Task | null
   retryTask: (id: string) => void
+  fetchHistory: () => Promise<void>
 }
 
-export const useTaskStore = create<TaskStore>()(
-  persist(
-    (set, get) => ({
-      tasks: [],
-      currentTaskId: null,
+export const useTaskStore = create<TaskStore>()((set, get) => ({
+  tasks: [],
+  currentTaskId: null,
+  historyLoaded: false,
 
-      addPendingTask: (taskId: string, platform: string, formData: any) =>
+  addPendingTask: (taskId: string, platform: string, formData: any) =>
+    set(state => ({
+      tasks: [
+        {
+          formData: formData,
+          id: taskId,
+          status: 'PENDING' as TaskStatus,
+          markdown: '',
+          platform: platform,
+          transcript: {
+            full_text: '',
+            language: '',
+            raw: null,
+            segments: [],
+          },
+          createdAt: new Date().toISOString(),
+          audioMeta: {
+            cover_url: '',
+            duration: 0,
+            file_path: '',
+            platform: '',
+            raw_info: null,
+            title: '',
+            video_id: '',
+          },
+        },
+        ...state.tasks,
+      ],
+      currentTaskId: taskId,
+    })),
 
-        set(state => ({
-          tasks: [
-            {
-              formData: formData,
-              id: taskId,
-              status: 'PENDING',
-              markdown: '',
-              platform: platform,
-              transcript: {
-                full_text: '',
-                language: '',
-                raw: null,
-                segments: [],
-              },
-              createdAt: new Date().toISOString(),
-              audioMeta: {
-                cover_url: '',
-                duration: 0,
-                file_path: '',
-                platform: '',
-                raw_info: null,
-                title: '',
-                video_id: '',
-              },
-            },
-            ...state.tasks,
-          ],
-          currentTaskId: taskId, // 默认设置为当前任务
-        })),
+  updateTaskContent: (id, data) =>
+    set(state => ({
+      tasks: state.tasks.map(task => {
+        if (task.id !== id) return task
 
-      updateTaskContent: (id, data) =>
-          set(state => ({
-            tasks: state.tasks.map(task => {
-              if (task.id !== id) return task
+        if (task.status === 'SUCCESS' && data.status === 'SUCCESS') return task
 
-              if (task.status === 'SUCCESS' && data.status === 'SUCCESS') return task
+        // 如果是 markdown 字符串，封装为版本
+        if (typeof data.markdown === 'string') {
+          const prev = task.markdown
+          const newVersion: Markdown = {
+            ver_id: `${task.id}-${uuidv4()}`,
+            content: data.markdown,
+            style: task.formData.style || '',
+            model_name: task.formData.model_name || '',
+            created_at: new Date().toISOString(),
+          }
 
-              // 如果是 markdown 字符串，封装为版本
-              if (typeof data.markdown === 'string') {
-                const prev = task.markdown
-                const newVersion: Markdown = {
-                  ver_id: `${task.id}-${uuidv4()}`,
-                  content: data.markdown,
-                  style: task.formData.style || '',
-                  model_name: task.formData.model_name || '',
-                  created_at: new Date().toISOString(),
-                }
+          let updatedMarkdown: Markdown[]
+          if (Array.isArray(prev)) {
+            updatedMarkdown = [newVersion, ...prev]
+          } else {
+            updatedMarkdown = [
+              newVersion,
+              ...(typeof prev === 'string' && prev
+                  ? [{
+                    ver_id: `${task.id}-${uuidv4()}`,
+                    content: prev,
+                    style: task.formData.style || '',
+                    model_name: task.formData.model_name || '',
+                    created_at: new Date().toISOString(),
+                  }]
+                  : []),
+            ]
+          }
 
-                let updatedMarkdown: Markdown[]
-                if (Array.isArray(prev)) {
-                  updatedMarkdown = [newVersion, ...prev]
-                } else {
-                  updatedMarkdown = [
-                    newVersion,
-                    ...(typeof prev === 'string' && prev
-                        ? [{
-                          ver_id: `${task.id}-${uuidv4()}`,
-                          content: prev,
-                          style: task.formData.style || '',
-                          model_name: task.formData.model_name || '',
-                          created_at: new Date().toISOString(),
-                        }]
-                        : []),
-                  ]
-                }
-
-                return {
-                  ...task,
-                  ...data,
-                  markdown: updatedMarkdown,
-                }
-              }
-
-              return { ...task, ...data }
-            }),
-          })),
-
-
-      getCurrentTask: () => {
-        const currentTaskId = get().currentTaskId
-        return get().tasks.find(task => task.id === currentTaskId) || null
-      },
-      retryTask: async (id: string, payload?: any) => {
-
-        if (!id){
-          toast.error('任务不存在')
-          return
+          return {
+            ...task,
+            ...data,
+            markdown: updatedMarkdown,
+          }
         }
-        const task = get().tasks.find(task => task.id === id)
-        console.log('retry',task)
-        if (!task) return
 
-        const newFormData = payload || task.formData
-        await generateNote({
-          ...newFormData,
-          task_id: id,
-        })
+        return { ...task, ...data }
+      }),
+    })),
 
-        set(state => ({
-          tasks: state.tasks.map(t =>
-              t.id === id
-                  ? {
-                    ...t,
-                    formData: newFormData, // ✅ 显式更新 formData
-                    status: 'PENDING',
-                  }
-                  : t
-          ),
-        }))
-      },
+  getCurrentTask: () => {
+    const currentTaskId = get().currentTaskId
+    return get().tasks.find(task => task.id === currentTaskId) || null
+  },
 
-
-      removeTask: async id => {
-        const task = get().tasks.find(t => t.id === id)
-
-        // 更新 Zustand 状态
-        set(state => ({
-          tasks: state.tasks.filter(task => task.id !== id),
-          currentTaskId: state.currentTaskId === id ? null : state.currentTaskId,
-        }))
-
-        // 调用后端删除接口（如果找到了任务）
-        if (task) {
-          await delete_task({
-            video_id: task.audioMeta.video_id,
-            platform: task.platform,
-          })
-        }
-      },
-
-      clearTasks: () => set({ tasks: [], currentTaskId: null }),
-
-      setCurrentTask: taskId => set({ currentTaskId: taskId }),
-    }),
-    {
-      name: 'task-storage',
+  retryTask: async (id: string, payload?: any) => {
+    if (!id) {
+      toast.error('任务不存在')
+      return
     }
-  )
-)
+    const task = get().tasks.find(task => task.id === id)
+    if (!task) return
+
+    const newFormData = payload || task.formData
+    await generateNote({
+      ...newFormData,
+      task_id: id,
+    })
+
+    set(state => ({
+      tasks: state.tasks.map(t =>
+          t.id === id
+              ? { ...t, formData: newFormData, status: 'PENDING' as TaskStatus }
+              : t
+      ),
+    }))
+  },
+
+  removeTask: async (id: string) => {
+    set(state => ({
+      tasks: state.tasks.filter(t => t.id !== id),
+      currentTaskId: state.currentTaskId === id ? null : state.currentTaskId,
+    }))
+
+    try {
+      await delete_task({ task_id: id })
+    } catch (e) {
+      console.warn('服务端删除失败（本地已移除）:', e)
+    }
+  },
+
+  clearTasks: () => set({ tasks: [], currentTaskId: null }),
+
+  setCurrentTask: taskId => set({ currentTaskId: taskId }),
+
+  fetchHistory: async () => {
+    try {
+      const list = await getTaskHistory()
+      if (!Array.isArray(list)) return
+      const historyTasks: Task[] = list.map((item: any) => ({
+        id: item.task_id,
+        platform: item.platform || '',
+        markdown: item.markdown || '',
+        status: 'SUCCESS' as TaskStatus,
+        createdAt: item.created_at || new Date().toISOString(),
+        audioMeta: {
+          cover_url: item.cover_url || '',
+          duration: 0,
+          file_path: '',
+          platform: item.platform || '',
+          raw_info: null,
+          title: item.title || '',
+          video_id: item.video_id || '',
+        },
+        transcript: {
+          full_text: '',
+          language: '',
+          raw: null,
+          segments: [],
+        },
+        formData: {
+          video_url: '',
+          link: undefined,
+          screenshot: undefined,
+          platform: item.platform || '',
+          quality: '',
+          model_name: '',
+          provider_id: '',
+        },
+      }))
+      set(state => {
+        // 保留当前会话中尚未完成的任务（不在服务端历史里的）
+        const serverIds = new Set(historyTasks.map(t => t.id))
+        const pendingTasks = state.tasks.filter(
+          t => t.status !== 'SUCCESS' || !serverIds.has(t.id)
+        )
+        return {
+          tasks: [...historyTasks, ...pendingTasks],
+          historyLoaded: true,
+        }
+      })
+    } catch (e) {
+      console.warn('获取历史笔记失败:', e)
+      set({ historyLoaded: true })
+    }
+  },
+}))

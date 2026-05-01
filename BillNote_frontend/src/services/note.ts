@@ -41,12 +41,9 @@ export const generateNote = async (data: {
   }
 }
 
-export const delete_task = async ({ video_id, platform }) => {
+export const delete_task = async ({ task_id }) => {
   try {
-    const data = {
-      video_id,
-      platform,
-    }
+    const data = { task_id }
     const res = await request.post('/delete_task', data)
 
 
@@ -55,6 +52,16 @@ export const delete_task = async ({ video_id, platform }) => {
   } catch (e) {
     toast.error('请求异常，删除任务失败')
     console.error('❌ 删除任务失败:', e)
+    throw e
+  }
+}
+
+export const getTaskHistory = async () => {
+  try {
+    const res = await request.get('/task_history')
+    return res
+  } catch (e) {
+    console.error('❌ 获取历史笔记失败', e)
     throw e
   }
 }

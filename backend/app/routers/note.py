@@ -2,6 +2,7 @@
 import json
 import os
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -10,8 +11,9 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
 from pydantic import BaseModel, validator, field_validator
 from dataclasses import asdict
 
-from app.db.video_task_dao import get_task_by_video
-from app.enmus.exception import NoteErrorEnum
+from app.db.video_task_dao import get_task_by_video, delete_task_by_video, insert_video_task
+from app.db.engine import get_db
+from app.db.models.video_tasks import VideoTask
 from app.enmus.note_enums import DownloadQuality
 from app.exceptions.note import NoteError
 from app.services.note import NoteGenerator, logger
@@ -33,6 +35,10 @@ router = APIRouter()
 class RecordRequest(BaseModel):
     video_id: str
     platform: str
+
+
+class DeleteRequest(BaseModel):
+    task_id: str
 
 
 class VideoRequest(BaseModel):
@@ -118,13 +124,30 @@ def run_note_task(task_id: str, video_url: str, platform: str, quality: Download
 
 
 @router.post('/delete_task')
-def delete_task(data: RecordRequest):
+def delete_task(data: DeleteRequest):
     try:
-        # TODO: 待持久化完成
-        # NoteGenerator().delete_note(video_id=data.video_id, platform=data.platform)
+        task_id = data.task_id
+
+        # 删除 note_results 下的所有相关文件
+        deleted = 0
+        for f in os.listdir(NOTE_OUTPUT_DIR):
+            if f.startswith(task_id):
+                os.remove(os.path.join(NOTE_OUTPUT_DIR, f))
+                deleted += 1
+
+        # 从数据库删除
+        db = next(get_db())
+        try:
+            db.query(VideoTask).filter_by(task_id=task_id).delete()
+            db.commit()
+        finally:
+            db.close()
+
+        logger.info(f"删除任务成功: task_id={task_id}, 删除{deleted}个文件")
         return R.success(msg='删除成功')
     except Exception as e:
-        return R.error(msg=e)
+        logger.error(f"删除任务失败: {e}")
+        return R.error(msg=str(e))
 
 
 @router.post("/upload")
@@ -229,6 +252,68 @@ def get_task_status(task_id: str):
         "message": "任务排队中",
         "task_id": task_id
     })
+
+
+@router.get("/task_history")
+def get_task_history():
+    """获取所有已完成笔记的历史列表"""
+    history = []
+    if not os.path.isdir(NOTE_OUTPUT_DIR):
+        return R.success([])
+
+    for fname in os.listdir(NOTE_OUTPUT_DIR):
+        # 只匹配 {uuid}.json 顶层结果文件，跳过 _audio.json、_transcript.json、.status.json 等
+        if not (fname.endswith(".json") and not fname.endswith("_audio.json")
+                and not fname.endswith("_transcript.json")
+                and not fname.endswith(".status.json")):
+            continue
+        task_id = fname.replace(".json", "")
+        try:
+            with open(os.path.join(NOTE_OUTPUT_DIR, fname), "r", encoding="utf-8") as f:
+                data = json.load(f)
+            audio_meta = data.get("audio_meta", {})
+            status_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.status.json")
+            status = "UNKNOWN"
+            created_at = ""
+            if os.path.exists(status_path):
+                with open(status_path, "r", encoding="utf-8") as f:
+                    st = json.load(f)
+                status = st.get("status", "UNKNOWN")
+            created_at = datetime.fromtimestamp(
+                os.path.getmtime(os.path.join(NOTE_OUTPUT_DIR, fname))
+            ).isoformat()
+
+            history.append({
+                "task_id": task_id,
+                "title": audio_meta.get("title", ""),
+                "platform": audio_meta.get("platform", ""),
+                "video_id": audio_meta.get("video_id", ""),
+                "cover_url": audio_meta.get("cover_url", ""),
+                "status": status,
+                "created_at": created_at,
+                "markdown": data.get("markdown", ""),
+            })
+        except Exception as e:
+            logger.warning(f"读取历史笔记 {fname} 失败: {e}")
+            continue
+
+    # 按创建时间降序排列
+    history.sort(key=lambda x: x["created_at"], reverse=True)
+    return R.success(history)
+
+
+@router.get("/task_detail/{task_id}")
+def get_task_detail(task_id: str):
+    """获取单条笔记的完整内容"""
+    result_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.json")
+    if not os.path.exists(result_path):
+        return R.error("笔记不存在", code=404)
+    try:
+        with open(result_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return R.success(data)
+    except Exception as e:
+        return R.error(str(e), code=500)
 
 
 @router.get("/image_proxy")

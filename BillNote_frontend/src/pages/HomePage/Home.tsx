@@ -8,6 +8,12 @@ type ViewStatus = 'idle' | 'loading' | 'success' | 'failed'
 export const HomePage: FC = () => {
   const tasks = useTaskStore(state => state.tasks)
   const currentTaskId = useTaskStore(state => state.currentTaskId)
+  const fetchHistory = useTaskStore(state => state.fetchHistory)
+  const historyLoaded = useTaskStore(state => state.historyLoaded)
+
+  useEffect(() => {
+    if (!historyLoaded) fetchHistory()
+  }, [])
 
   const currentTask = tasks.find(t => t.id === currentTaskId)
 
