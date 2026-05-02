@@ -214,14 +214,15 @@ function createMarkdownComponents(baseURL: string) {
               style={codeStyle}
               language={match[1]}
               PreTag="div"
-              className="!bg-muted !m-0 !p-0"
+              className="!bg-muted !m-0 !p-0 !overflow-x-auto !max-w-full"
               customStyle={{
                 margin: 0,
                 padding: '1rem',
                 background: 'transparent',
                 fontSize: '0.9rem',
+                overflow: 'auto',
+                maxWidth: '100%',
               }}
-              {...props}
             >
               {codeContent}
             </SyntaxHighlighter>
@@ -451,34 +452,38 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                   <ChatPanel taskId={currentTask.id} mode="full" onModeChange={setShowChat} />
                 </div>
               ) : (
-              <>
-              <ScrollArea className="min-w-0 flex-1">
-                <VideoBanner
-                  audioMeta={currentTask?.audioMeta}
-                  videoUrl={currentTask?.formData?.video_url}
-                />
-                <div className={'markdown-body w-full px-2 md:px-4'}>
-                  <ReactMarkdown
-                    remarkPlugins={remarkPlugins}
-                    rehypePlugins={rehypePlugins}
-                    components={markdownComponents}
-                  >
-                    {selectedContent.replace(/^>\s*来源链接：[^\n]*\n*/m, '')}
-                  </ReactMarkdown>
-                </div>
-              </ScrollArea>
-              {showTranscribe && (
-                <div className={'ml-2 hidden w-2/4 md:block'}>
-                  <TranscriptViewer />
-                </div>
-              )}
-              {/* 侧边问答模式：移动端全屏，桌面端各占一半 */}
-              {showChat === 'half' && currentTask && (
-                <div className="absolute inset-0 z-30 bg-white md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
-                  <ChatPanel taskId={currentTask.id} mode="half" onModeChange={setShowChat} />
-                </div>
-              )}
-              </>
+                <>
+                  <div className="min-w-0 flex-1 overflow-y-auto">
+                    <VideoBanner
+                      audioMeta={currentTask?.audioMeta}
+                      videoUrl={currentTask?.formData?.video_url}
+                    />
+                    <div
+                      className={
+                        'markdown-body w-full max-w-full overflow-x-hidden px-2 break-words md:px-4'
+                      }
+                    >
+                      <ReactMarkdown
+                        remarkPlugins={remarkPlugins}
+                        rehypePlugins={rehypePlugins}
+                        components={markdownComponents}
+                      >
+                        {selectedContent.replace(/^>\s*来源链接：[^\n]*\n*/m, '')}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                  {showTranscribe && (
+                    <div className={'ml-2 hidden w-2/4 md:block'}>
+                      <TranscriptViewer />
+                    </div>
+                  )}
+                  {/* 侧边问答模式：移动端全屏，桌面端各占一半 */}
+                  {showChat === 'half' && currentTask && (
+                    <div className="absolute inset-0 z-30 bg-white md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
+                      <ChatPanel taskId={currentTask.id} mode="half" onModeChange={setShowChat} />
+                    </div>
+                  )}
+                </>
               )}
             </>
           ) : (

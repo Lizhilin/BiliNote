@@ -30,7 +30,7 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
   const originalUrl = videoUrl || audioMeta.raw_info?.webpage_url || ''
 
   return (
-    <div className="relative mb-4 overflow-hidden rounded-lg">
+    <div className="relative mb-4 max-w-full overflow-hidden rounded-lg">
       {/* 模糊背景封面 */}
       <div className="absolute inset-0">
         {coverUrl ? (
@@ -46,7 +46,7 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
       </div>
 
       {/* 内容层 */}
-      <div className="relative flex items-center gap-3 px-3 py-3 md:gap-4 md:px-5 md:py-4">
+      <div className="relative flex w-full min-w-0 flex-wrap items-center gap-3 px-3 py-3 md:gap-4 md:px-5 md:py-4">
         {/* 封面缩略图 */}
         {coverUrl && (
           <img
@@ -58,14 +58,14 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
         )}
 
         {/* 文字信息 */}
-        <div className="min-w-0 flex-1">
-          <h2 className="line-clamp-2 text-sm font-bold text-white md:line-clamp-none md:text-base" title={title}>
+        <div className="min-w-0 flex-1 max-w-full">
+          <h2 className="line-clamp-2 break-words text-sm font-bold text-white md:line-clamp-none md:text-base" title={title}>
             {title}
           </h2>
           <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-white/70 md:gap-2 md:text-sm">
-            {uploader && <span>{uploader}</span>}
-            {uploader && platform && <span className="text-white/40">·</span>}
-            {platform && <span>{platform}</span>}
+            {uploader && <span className="break-words">{uploader}</span>}
+            {uploader && platform && <span className="text-white/40 shrink-0">·</span>}
+            {platform && <span className="break-words">{platform}</span>}
           </div>
         </div>
 
