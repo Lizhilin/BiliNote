@@ -71,7 +71,7 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
   if (historyPage === 0) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+        <Loader2 className="h-5 w-5 animate-spin text-neutral-400 dark:text-neutral-500" />
       </div>
     )
   }
@@ -83,13 +83,13 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
             <input
                 type="text"
                 placeholder="搜索笔记标题..."
-                className="w-full rounded border border-neutral-300 px-3 py-1 text-sm outline-none focus:border-primary"
+                className="w-full rounded border border-neutral-300 px-3 py-1 text-sm outline-none focus:border-primary dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <div className="rounded-md border border-neutral-200 bg-neutral-50 py-6 text-center">
-            <p className="text-sm text-neutral-500">暂无记录</p>
+          <div className="rounded-md border border-neutral-200 bg-neutral-50 py-6 text-center dark:border-neutral-700 dark:bg-neutral-800">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">暂无记录</p>
           </div>
         </>
 
@@ -103,7 +103,7 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
         <input
             type="text"
             placeholder="搜索笔记标题..."
-            className="w-full rounded border border-neutral-300 px-3 py-1 text-sm outline-none focus:border-primary"
+            className="w-full rounded border border-neutral-300 px-3 py-1 text-sm outline-none focus:border-primary dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
             value={search}
             onChange={e => setSearch(e.target.value)}
         />
@@ -114,8 +114,8 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
             key={task.id}
             onClick={() => onSelect(task.id)}
             className={cn(
-              'flex cursor-pointer flex-col rounded-md border border-neutral-200 p-3',
-              selectedId === task.id && 'border-primary bg-primary-light'
+              'flex cursor-pointer flex-col rounded-md border border-neutral-200 p-3 dark:border-neutral-700 dark:bg-neutral-800',
+              selectedId === task.id && 'border-primary bg-primary-light dark:border-primary dark:bg-primary/20'
             )}
           >
             <div
@@ -129,8 +129,8 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                   <img src={task.audioMeta.cover_url} alt="封面" className="h-10 w-12 rounded-md object-cover" />
                 )
               ) : (
-                <div className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-100 to-purple-200">
-                  <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-100 to-purple-200 dark:from-indigo-900/60 dark:to-purple-900/60">
+                  <svg className="h-5 w-5 text-indigo-400 dark:text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                   </svg>
                 </div>
@@ -213,14 +213,14 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
       {/* 加载中 */}
       {isLoadingHistory && (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
-          <span className="ml-2 text-sm text-neutral-400">加载中…</span>
+          <Loader2 className="h-5 w-5 animate-spin text-neutral-400 dark:text-neutral-500" />
+          <span className="ml-2 text-sm text-neutral-400 dark:text-neutral-500">加载中…</span>
         </div>
       )}
 
       {/* 没有更多 */}
       {!historyHasMore && historyPage > 0 && filteredTasks.length > 0 && (
-        <div className="py-4 text-center text-sm text-neutral-300">没有更多了</div>
+        <div className="py-4 text-center text-sm text-neutral-300 dark:text-neutral-600">没有更多了</div>
       )}
     </>
   )

@@ -372,12 +372,12 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
 
   if (status === 'loading') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center space-y-4 text-neutral-500">
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-4 text-neutral-500 dark:text-neutral-400">
         <StepBar steps={steps} currentStep={taskStatus} />
         <Loading className="h-5 w-5" />
         <div className="text-center text-sm">
-          <p className="text-lg font-bold">正在生成笔记，请稍候…</p>
-          <p className="mt-2 text-xs text-neutral-500">这可能需要几秒钟时间，取决于视频长度</p>
+          <p className="text-lg font-bold dark:text-neutral-300">正在生成笔记，请稍候…</p>
+          <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">这可能需要几秒钟时间，取决于视频长度</p>
         </div>
       </div>
     )
@@ -385,11 +385,11 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
 
   if (status === 'idle') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center space-y-3 text-neutral-500">
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-3 text-neutral-500 dark:text-neutral-400">
         <Idle />
         <div className="text-center">
-          <p className="text-lg font-bold">输入视频链接并点击"生成笔记"</p>
-          <p className="mt-2 text-xs text-neutral-500">支持哔哩哔哩、YouTube 、抖音等视频平台</p>
+          <p className="text-lg font-bold dark:text-neutral-300">输入视频链接并点击"生成笔记"</p>
+          <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">支持哔哩哔哩、YouTube 、抖音等视频平台</p>
         </div>
       </div>
     )
@@ -433,7 +433,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
       />
 
       {viewMode === 'map' ? (
-        <div className="flex w-full flex-1 overflow-hidden bg-white">
+        <div className="flex w-full flex-1 overflow-hidden bg-white dark:bg-neutral-950">
           <div className={'w-full'}>
             <MarkmapEditor
               value={selectedContent}
@@ -444,7 +444,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-1 overflow-hidden bg-white py-2 md:py-2">
+        <div className="flex flex-1 overflow-hidden bg-white py-2 dark:bg-neutral-950 md:py-2">
           {selectedContent && selectedContent !== 'loading' && selectedContent !== 'empty' ? (
             <>
               {showChat === 'full' && currentTask ? (
@@ -479,7 +479,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                   )}
                   {/* 侧边问答模式：移动端全屏，桌面端各占一半 */}
                   {showChat === 'half' && currentTask && (
-                    <div className="absolute inset-0 z-30 bg-white md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
+                    <div className="absolute inset-0 z-30 bg-white dark:bg-neutral-900 md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
                       <ChatPanel taskId={currentTask.id} mode="half" onModeChange={setShowChat} />
                     </div>
                   )}
@@ -492,8 +492,8 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                 <div className="bg-primary-light mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                   <ArrowRight className="text-primary h-8 w-8" />
                 </div>
-                <p className="mb-2 text-neutral-600">输入视频链接并点击"生成笔记"按钮</p>
-                <p className="text-xs text-neutral-500">支持哔哩哔哩、YouTube等视频网站</p>
+                <p className="mb-2 text-neutral-600 dark:text-neutral-400">输入视频链接并点击"生成笔记"按钮</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-500">支持哔哩哔哩、YouTube等视频网站</p>
               </div>
             </div>
           )}

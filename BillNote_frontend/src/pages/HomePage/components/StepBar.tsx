@@ -26,7 +26,7 @@ const StepBar: FC<StepBarProps> = ({ steps, currentStep }) => {
             <div className="relative flex flex-col items-center justify-center">
               <div
                 className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold md:h-8 md:w-8 md:text-xs ${
-                  isActive ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'
+                  isActive ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600 dark:bg-neutral-600 dark:text-neutral-400'
                 }`}
               >
                 {index + 1}
@@ -38,11 +38,11 @@ const StepBar: FC<StepBarProps> = ({ steps, currentStep }) => {
             </div>
 
             {/* 步骤名称 */}
-            <div className="mt-2 text-center text-[10px] leading-tight text-gray-700 md:mt-4 md:text-xs">{step.label}</div>
+            <div className="mt-2 text-center text-[10px] leading-tight text-gray-700 dark:text-neutral-300 md:mt-4 md:text-xs">{step.label}</div>
 
             {/* 连接线 */}
 
-            <div className={`h-0.5 w-full md:h-1 ${isActive ? 'bg-primary' : 'bg-gray-300'}`}></div>
+            <div className={`h-0.5 w-full md:h-1 ${isActive ? 'bg-primary' : 'bg-gray-300 dark:bg-neutral-600'}`}></div>
           </div>
         )
       })}

@@ -112,10 +112,9 @@ Monorepo: 前端(React/Vite) + 后端(FastAPI) + Nginx，Docker Compose 部署
 - data/ → 运行时数据(note_results/视频帧等)
 
 ## 部署
+- 详尽部署指南 → [服务器部署指南.md](./服务器部署指南.md)
 - docker-compose.yml → 三容器：bilinote-backend + bilinote-frontend + bilinote-nginx
 - 服务器: 10.3.104.112
-- 增量更新: vite build → scp dist → docker cp → nginx -s reload
-- 完整构建: docker-compose build → up -d
 
 ## 关键数据流
 1. 用户提交链接 → NoteForm → POST /api/notes

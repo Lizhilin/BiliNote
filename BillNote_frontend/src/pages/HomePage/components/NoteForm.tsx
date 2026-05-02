@@ -92,7 +92,7 @@ const SectionHeader = ({ title, tip }: { title: string; tip?: string }) => (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="hover:text-primary h-4 w-4 cursor-pointer text-neutral-400" />
+            <Info className="hover:text-primary h-4 w-4 cursor-pointer text-neutral-400 dark:text-neutral-500" />
           </TooltipTrigger>
           <TooltipContent className="text-xs">{tip}</TooltipContent>
         </Tooltip>
@@ -272,7 +272,7 @@ const NoteForm = () => {
       <div className="flex gap-2">
         <Button
           type="submit"
-          className={!editing ? 'w-full' : 'w-2/3' + ' bg-primary'}
+          className={!editing ? 'w-full' : 'w-1/2 bg-primary'}
           disabled={busy}
         >
           {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -280,7 +280,7 @@ const NoteForm = () => {
         </Button>
 
         {editing && (
-          <Button type="button" variant="outline" className="w-1/3" onClick={handleCreateNew}>
+          <Button type="button" variant="outline" className="w-1/2" onClick={handleCreateNew}>
             <Plus className="mr-2 h-4 w-4" />
             新建笔记
           </Button>
@@ -380,7 +380,7 @@ const NoteForm = () => {
                 {platform === 'local' && (
                   <>
                     <div
-                      className="hover:border-primary mt-2 flex h-40 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-gray-300 transition-colors"
+                      className="hover:border-primary mt-2 flex h-40 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-gray-300 transition-colors dark:border-neutral-600"
                       onDragOver={e => {
                         e.preventDefault()
                         e.stopPropagation()
@@ -402,13 +402,13 @@ const NoteForm = () => {
                       }}
                     >
                       {isUploading ? (
-                        <p className="text-center text-sm text-blue-500">上传中，请稍候…</p>
+                        <p className="text-center text-sm text-blue-500 dark:text-blue-400">上传中，请稍候…</p>
                       ) : uploadSuccess ? (
-                        <p className="text-center text-sm text-green-500">上传成功！</p>
+                        <p className="text-center text-sm text-green-500 dark:text-green-400">上传成功！</p>
                       ) : (
-                        <p className="text-center text-sm text-gray-500">
+                        <p className="text-center text-sm text-gray-500 dark:text-neutral-400">
                           拖拽文件到这里上传 <br />
-                          <span className="text-xs text-gray-400">或点击选择文件</span>
+                          <span className="text-xs text-gray-400 dark:text-neutral-500">或点击选择文件</span>
                         </p>
                       )}
                     </div>
