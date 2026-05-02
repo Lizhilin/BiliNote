@@ -57,7 +57,9 @@ export interface Task {
 interface TaskStore {
   tasks: Task[]
   currentTaskId: string | null
-  historyLoaded: boolean
+  historyPage: number
+  historyHasMore: boolean
+  isLoadingHistory: boolean
   addPendingTask: (taskId: string, platform: string) => void
   updateTaskContent: (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>) => void
   removeTask: (id: string) => void
@@ -65,13 +67,15 @@ interface TaskStore {
   setCurrentTask: (taskId: string | null) => void
   getCurrentTask: () => Task | null
   retryTask: (id: string) => void
-  fetchHistory: () => Promise<void>
+  fetchHistory: (page?: number) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>()((set, get) => ({
   tasks: [],
   currentTaskId: null,
-  historyLoaded: false,
+  historyPage: 0,
+  historyHasMore: false,
+  isLoadingHistory: false,
 
   addPendingTask: (taskId: string, platform: string, formData: any) =>
     set(state => ({
@@ -196,11 +200,20 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   setCurrentTask: taskId => set({ currentTaskId: taskId }),
 
-  fetchHistory: async () => {
+  fetchHistory: async (page: number = 1) => {
+    const state = get()
+    if (state.isLoadingHistory) return
+    set({ isLoadingHistory: true })
     try {
-      const list = await getTaskHistory()
-      if (!Array.isArray(list)) return
-      const historyTasks: Task[] = list.map((item: any) => ({
+      const res = await getTaskHistory(page, 20)
+      const { items, has_more } = res as {
+        items: any[]
+        total: number
+        page: number
+        page_size: number
+        has_more: boolean
+      }
+      const historyTasks: Task[] = items.map((item: any) => ({
         id: item.task_id,
         platform: item.platform || '',
         markdown: item.markdown || '',
@@ -231,20 +244,33 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
           provider_id: '',
         },
       }))
-      set(state => {
-        // 保留当前会话中尚未完成的任务（不在服务端历史里的）
-        const serverIds = new Set(historyTasks.map(t => t.id))
-        const pendingTasks = state.tasks.filter(
-          t => t.status !== 'SUCCESS' || !serverIds.has(t.id)
-        )
-        return {
-          tasks: [...historyTasks, ...pendingTasks],
-          historyLoaded: true,
+      set(s => {
+        const newIds = new Set(historyTasks.map(t => t.id))
+        const pendingTasks = s.tasks.filter(t => t.status !== 'SUCCESS')
+        if (page === 1) {
+          // 第1页：替换全部历史
+          return {
+            tasks: [...historyTasks, ...pendingTasks],
+            historyPage: page,
+            historyHasMore: has_more,
+            isLoadingHistory: false,
+          }
+        } else {
+          // 第N页：追加，去重
+          const existingHistory = s.tasks.filter(
+            t => t.status === 'SUCCESS' && !newIds.has(t.id)
+          )
+          return {
+            tasks: [...existingHistory, ...historyTasks, ...pendingTasks],
+            historyPage: page,
+            historyHasMore: has_more,
+            isLoadingHistory: false,
+          }
         }
       })
     } catch (e) {
       console.warn('获取历史笔记失败:', e)
-      set({ historyLoaded: true })
+      set({ isLoadingHistory: false })
     }
   },
 }))

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Query
 from pydantic import BaseModel, validator, field_validator
 from dataclasses import asdict
 
@@ -255,18 +255,38 @@ def get_task_status(task_id: str):
 
 
 @router.get("/task_history")
-def get_task_history():
-    """获取所有已完成笔记的历史列表"""
-    history = []
+def get_task_history(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    """获取历史笔记列表（分页）"""
     if not os.path.isdir(NOTE_OUTPUT_DIR):
-        return R.success([])
+        return R.success({"items": [], "total": 0, "page": page, "page_size": page_size, "has_more": False})
 
+    # ① 收集所有有效文件及 mtime
+    entries: list[tuple[str, float]] = []
     for fname in os.listdir(NOTE_OUTPUT_DIR):
-        # 只匹配 {uuid}.json 顶层结果文件，跳过 _audio.json、_transcript.json、.status.json 等
         if not (fname.endswith(".json") and not fname.endswith("_audio.json")
                 and not fname.endswith("_transcript.json")
                 and not fname.endswith(".status.json")):
             continue
+        fpath = os.path.join(NOTE_OUTPUT_DIR, fname)
+        try:
+            mtime = os.path.getmtime(fpath)
+            entries.append((fname, mtime))
+        except OSError:
+            continue
+
+    # ② 按 mtime 降序
+    entries.sort(key=lambda x: x[1], reverse=True)
+    total = len(entries)
+    has_more = page * page_size < total
+    start = (page - 1) * page_size
+    page_entries = entries[start: start + page_size]
+
+    # ③ 读取当前页的详细内容
+    items = []
+    for fname, mtime in page_entries:
         task_id = fname.replace(".json", "")
         try:
             with open(os.path.join(NOTE_OUTPUT_DIR, fname), "r", encoding="utf-8") as f:
@@ -274,16 +294,12 @@ def get_task_history():
             audio_meta = data.get("audio_meta", {})
             status_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.status.json")
             status = "UNKNOWN"
-            created_at = ""
             if os.path.exists(status_path):
                 with open(status_path, "r", encoding="utf-8") as f:
                     st = json.load(f)
                 status = st.get("status", "UNKNOWN")
-            created_at = datetime.fromtimestamp(
-                os.path.getmtime(os.path.join(NOTE_OUTPUT_DIR, fname))
-            ).isoformat()
-
-            history.append({
+            created_at = datetime.fromtimestamp(mtime).isoformat()
+            items.append({
                 "task_id": task_id,
                 "title": audio_meta.get("title", ""),
                 "platform": audio_meta.get("platform", ""),
@@ -297,9 +313,13 @@ def get_task_history():
             logger.warning(f"读取历史笔记 {fname} 失败: {e}")
             continue
 
-    # 按创建时间降序排列
-    history.sort(key=lambda x: x["created_at"], reverse=True)
-    return R.success(history)
+    return R.success({
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": has_more,
+    })
 
 
 @router.get("/task_detail/{task_id}")

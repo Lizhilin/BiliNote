@@ -1,10 +1,8 @@
-import { useTaskStore } from '@/store/taskStore'
-import { ScrollArea } from '@/components/ui/scroll-area.tsx'
-import { Badge } from '@/components/ui/badge.tsx'
-import { cn } from '@/lib/utils.ts'
-import { Trash } from 'lucide-react'
-import { Button } from '@/components/ui/button.tsx'
-import PinyinMatch from 'pinyin-match'
+import {useTaskStore} from '@/store/taskStore'
+import {Badge} from '@/components/ui/badge.tsx'
+import {cn} from '@/lib/utils.ts'
+import {Loader2, Trash} from 'lucide-react'
+import {Button} from '@/components/ui/button.tsx'
 import Fuse from 'fuse.js'
 
 import {
@@ -14,7 +12,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip.tsx'
 import LazyImage from "@/components/LazyImage.tsx";
-import {FC, useState, useEffect, useMemo} from 'react'
+import {FC, useState, useEffect, useMemo, useCallback, useRef} from 'react'
 
 interface NoteHistoryProps {
   onSelect: (taskId: string) => void
@@ -24,14 +22,39 @@ interface NoteHistoryProps {
 const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
   const tasks = useTaskStore(state => state.tasks)
   const removeTask = useTaskStore(state => state.removeTask)
+  const fetchHistory = useTaskStore(state => state.fetchHistory)
+  const historyHasMore = useTaskStore(state => state.historyHasMore)
+  const isLoadingHistory = useTaskStore(state => state.isLoadingHistory)
+  const historyPage = useTaskStore(state => state.historyPage)
   // 图片代理走同源 /api/ 路径，兼容 localhost 和 IP 访问
   const proxyCover = (url: string) => `/api/image_proxy?url=${encodeURIComponent(url)}`
   const [rawSearch, setRawSearch] = useState('')
   const [search, setSearch] = useState('')
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const fuse = useMemo(() => new Fuse(tasks, {
     keys: ['audioMeta.title'],
     threshold: 0.4 // 匹配精度（越低越严格）
   }), [tasks])
+
+  const loadMore = useCallback(() => {
+    if (isLoadingHistory || !historyHasMore) return
+    fetchHistory(historyPage + 1)
+  }, [isLoadingHistory, historyHasMore, historyPage, fetchHistory])
+
+  // IntersectionObserver 触底加载
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore()
+      },
+      { rootMargin: '0px 0px 200px 0px' }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loadMore])
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (rawSearch === '') return
@@ -43,6 +66,16 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
   const filteredTasks = search.trim()
       ? fuse.search(search).map(result => result.item)
       : tasks
+
+  // 首次加载中
+  if (historyPage === 0) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+      </div>
+    )
+  }
+
   if (filteredTasks.length === 0) {
     return (
         <>
@@ -173,6 +206,22 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
           </div>
         ))}
       </div>
+
+      {/* 触底加载 sentinel */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {/* 加载中 */}
+      {isLoadingHistory && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+          <span className="ml-2 text-sm text-neutral-400">加载中…</span>
+        </div>
+      )}
+
+      {/* 没有更多 */}
+      {!historyHasMore && historyPage > 0 && filteredTasks.length > 0 && (
+        <div className="py-4 text-center text-sm text-neutral-300">没有更多了</div>
+      )}
     </>
   )
 }

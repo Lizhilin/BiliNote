@@ -11,10 +11,10 @@ export const HomePage: FC = () => {
   const tasks = useTaskStore(state => state.tasks)
   const currentTaskId = useTaskStore(state => state.currentTaskId)
   const fetchHistory = useTaskStore(state => state.fetchHistory)
-  const historyLoaded = useTaskStore(state => state.historyLoaded)
+  const historyPage = useTaskStore(state => state.historyPage)
 
   useEffect(() => {
-    if (!historyLoaded) fetchHistory()
+    if (historyPage === 0) fetchHistory(1)
   }, [])
 
   const currentTask = tasks.find(t => t.id === currentTaskId)

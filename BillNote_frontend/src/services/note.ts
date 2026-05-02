@@ -56,9 +56,11 @@ export const delete_task = async ({ task_id }) => {
   }
 }
 
-export const getTaskHistory = async () => {
+export const getTaskHistory = async (page = 1, pageSize = 20) => {
   try {
-    const res = await request.get('/task_history')
+    const res = await request.get('/task_history', {
+      params: { page, page_size: pageSize },
+    })
     return res
   } catch (e) {
     console.error('❌ 获取历史笔记失败', e)
