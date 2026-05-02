@@ -349,11 +349,19 @@ const NoteForm = () => {
                       placeholder="粘贴视频链接，自动过滤多余文字"
                       {...field}
                       onPaste={e => {
-                        const text = e.clipboardData.getData('text')
+                        const text = e.clipboardData?.getData('text') ?? ''
                         const url = extractUrl(text)
-                        if (url !== text) {
+                        if (url && url !== text) {
                           e.preventDefault()
                           field.onChange(url)
+                        }
+                      }}
+                      onBlur={e => {
+                        field.onBlur()
+                        const raw = e.target.value
+                        if (raw && platform !== 'local') {
+                          const cleaned = extractUrl(raw)
+                          if (cleaned !== raw) field.onChange(cleaned)
                         }
                       }}
                     />
