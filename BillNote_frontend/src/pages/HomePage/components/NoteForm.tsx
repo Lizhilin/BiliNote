@@ -126,11 +126,18 @@ const CheckboxGroup = ({
   </div>
 )
 
+/** 从粘贴文本中提取第一个视频链接 */
+function extractUrl(text: string): string {
+  const m = text.match(/https?:\/\/[^\s]+/)
+  return m ? m[0] : text
+}
+
 /* -------------------- 主组件 -------------------- */
 const NoteForm = () => {
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   /* ---- 全局状态 ---- */
   const { addPendingTask, currentTaskId, setCurrentTask, getCurrentTask, retryTask } =
     useTaskStore()
@@ -217,20 +224,30 @@ const NoteForm = () => {
   }
 
   const onSubmit = async (values: NoteFormValues) => {
-    console.log('Not even go here')
-    const payload: NoteFormValues = {
-      ...values,
-      provider_id: modelList.find(m => m.model_name === values.model_name)!.provider_id,
-      task_id: currentTaskId || '',
+    setSubmitting(true)
+    try {
+      // 过滤视频链接中可能混杂的无关文字（兼容移动端粘贴）
+      if (values.video_url && values.platform !== 'local') {
+        const cleaned = extractUrl(values.video_url)
+        if (cleaned !== values.video_url) {
+          form.setValue('video_url', cleaned)
+          values.video_url = cleaned
+        }
+      }
+      const payload: NoteFormValues = {
+        ...values,
+        provider_id: modelList.find(m => m.model_name === values.model_name)!.provider_id,
+        task_id: currentTaskId || '',
+      }
+      if (currentTaskId) {
+        await retryTask(currentTaskId, payload)
+        return
+      }
+      const data = await generateNote(payload)
+      addPendingTask(data.task_id, values.platform, payload)
+    } finally {
+      setSubmitting(false)
     }
-    if (currentTaskId) {
-      retryTask(currentTaskId, payload)
-      return
-    }
-
-    // message.success('已提交任务')
-    const  data  = await generateNote(payload)
-    addPendingTask(data.task_id, values.platform, payload)
   }
   const onInvalid = (errors: FieldErrors<NoteFormValues>) => {
     console.warn('表单校验失败：', errors)
@@ -242,16 +259,17 @@ const NoteForm = () => {
     setCurrentTask(null)
   }
   const FormButton = () => {
-    const label = generating ? '正在生成…' : editing ? '重新生成' : '生成笔记'
+    const busy = generating || submitting
+    const label = busy ? '正在生成…' : editing ? '重新生成' : '生成笔记'
 
     return (
       <div className="flex gap-2">
         <Button
           type="submit"
           className={!editing ? 'w-full' : 'w-2/3' + ' bg-primary'}
-          disabled={generating}
+          disabled={busy}
         >
-          {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {label}
         </Button>
 
@@ -320,7 +338,19 @@ const NoteForm = () => {
                       <Input disabled={!!editing} placeholder="请输入本地视频路径" {...field} />
                     </>
                   ) : (
-                    <Input disabled={!!editing} placeholder="请输入视频网站链接" {...field} />
+                    <Input
+                      disabled={!!editing}
+                      placeholder="粘贴视频链接，自动过滤多余文字"
+                      {...field}
+                      onPaste={e => {
+                        const text = e.clipboardData.getData('text')
+                        const url = extractUrl(text)
+                        if (url !== text) {
+                          e.preventDefault()
+                          field.onChange(url)
+                        }
+                      }}
+                    />
                   )}
                   <FormMessage style={{ display: 'none' }} />
                 </FormItem>
