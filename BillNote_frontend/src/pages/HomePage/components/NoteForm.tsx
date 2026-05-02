@@ -7,7 +7,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form.tsx'
-import { useEffect,useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -150,7 +150,7 @@ const NoteForm = () => {
       platform: 'bilibili',
       quality: 'medium',
       model_name: modelList[0]?.model_name || '',
-      style: 'minimal',
+      style: 'detailed',
       video_interval: 6,
       grid_size: [2, 2],
       format: [],
@@ -169,9 +169,15 @@ const NoteForm = () => {
   /* ---- 副作用 ---- */
   useEffect(() => {
     loadEnabledModels()
-
-    return
   }, [])
+
+  // 模型列表加载后，无选中时默认第一个
+  useEffect(() => {
+    if (modelList.length > 0 && !form.getValues('model_name')) {
+      form.setValue('model_name', modelList[0].model_name)
+    }
+  }, [modelList])
+
   useEffect(() => {
     if (!currentTask) return
     const { formData } = currentTask
@@ -182,7 +188,7 @@ const NoteForm = () => {
       platform: formData.platform || 'bilibili',
       video_url: formData.video_url || '',
       model_name: formData.model_name || modelList[0]?.model_name || '',
-      style: formData.style || 'minimal',
+      style: formData.style || 'detailed',
       quality: formData.quality || 'medium',
       extras: formData.extras || '',
       screenshot: formData.screenshot ?? false,
@@ -416,8 +422,8 @@ const NoteForm = () => {
                  <FormItem>
                    <SectionHeader title="模型选择" tip="不同模型效果不同，建议自行测试" />
                    <Select
-                     onOpenChange={()=>{
-                       loadEnabledModels()
+                     onOpenChange={(open) => {
+                       if (open) loadEnabledModels()
                      }}
                      value={field.value}
                      onValueChange={field.onChange}

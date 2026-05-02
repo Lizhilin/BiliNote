@@ -2,6 +2,7 @@ import React, { FC, useState, useEffect } from 'react'
 import { Plus, ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTaskStore } from '@/store/taskStore'
+import { useModelStore } from '@/store/modelStore'
 import logo from '@/assets/icon.svg'
 
 type MobilePanel = 'history' | 'add' | 'detail'
@@ -17,6 +18,15 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
   const currentTaskId = useTaskStore(state => state.currentTaskId)
   const tasks = useTaskStore(state => state.tasks)
   const setCurrentTask = useTaskStore(state => state.setCurrentTask)
+
+  const loadEnabledModels = useModelStore(s => s.loadEnabledModels)
+
+  // 切到添加面板时刷新模型列表
+  useEffect(() => {
+    if (activePanel === 'add') {
+      loadEnabledModels()
+    }
+  }, [activePanel])
 
   // 当选中任务时自动打开详情面板
   useEffect(() => {
