@@ -1,9 +1,10 @@
 import React, { FC, useState, useEffect } from 'react'
-import { Plus, ArrowLeft, SlidersHorizontal } from 'lucide-react'
+import { Plus, ArrowLeft, SlidersHorizontal, Moon, Sun } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTaskStore } from '@/store/taskStore'
 import { useModelStore } from '@/store/modelStore'
 import logo from '@/assets/icon.svg'
+import { useTheme } from '@/hooks/useTheme.ts'
 
 type MobilePanel = 'history' | 'add' | 'detail'
 
@@ -37,26 +38,32 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
 
   const currentTask = tasks.find(t => t.id === currentTaskId)
   const isGenerating = currentTask && !['SUCCESS', 'FAILED', undefined].includes(currentTask?.status)
+  const { theme, toggle: toggleTheme } = useTheme()
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-white" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div className="relative h-screen w-screen overflow-hidden bg-white dark:bg-neutral-950" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* ========== 历史列表面板 (默认) ========== */}
       <div
-        className={`absolute inset-0 z-10 flex flex-col bg-white transition-transform duration-300 ease-in-out ${
+        className={`absolute inset-0 z-10 flex flex-col bg-white dark:bg-neutral-900 transition-transform duration-300 ease-in-out ${
           activePanel === 'history' ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* 顶栏 */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-100 px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-100 px-4 dark:border-neutral-800">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl">
               <img src={logo} alt="logo" className="h-full w-full object-contain" />
             </div>
-            <div className="text-xl font-bold text-gray-800">Note</div>
+            <div className="text-xl font-bold text-gray-800 dark:text-gray-200">Note</div>
           </div>
-          <Link to="/settings" className="rounded-lg p-2 hover:bg-neutral-100">
-            <SlidersHorizontal className="h-5 w-5 text-neutral-500" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <button onClick={toggleTheme} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            <Link to="/settings" className="rounded-lg p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+              <SlidersHorizontal className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
+            </Link>
+          </div>
         </header>
 
         {/* 历史列表 - 用原生滚动替代 ScrollArea，移动端触摸更流畅 */}
@@ -77,19 +84,19 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
 
       {/* ========== 添加面板 (左→右滑入) ========== */}
       <div
-        className={`absolute inset-0 z-20 flex flex-col bg-white transition-transform duration-300 ease-in-out ${
+        className={`absolute inset-0 z-20 flex flex-col bg-white dark:bg-neutral-900 transition-transform duration-300 ease-in-out ${
           activePanel === 'add' ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* 顶栏 */}
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4 dark:border-neutral-800">
           <button
             onClick={() => setActivePanel('history')}
-            className="rounded-lg p-2 hover:bg-neutral-100"
+            className="rounded-lg p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
-            <ArrowLeft className="h-5 w-5 text-neutral-600" />
+            <ArrowLeft className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">添加笔记</h1>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200">添加笔记</h1>
         </header>
 
         {/* 表单 - 用原生滚动替代 ScrollArea */}
@@ -100,22 +107,22 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
 
       {/* ========== 详情面板 (右→左滑入) ========== */}
       <div
-        className={`absolute inset-0 z-20 flex flex-col bg-white transition-transform duration-300 ease-in-out ${
+        className={`absolute inset-0 z-20 flex flex-col bg-white dark:bg-neutral-900 transition-transform duration-300 ease-in-out ${
           activePanel === 'detail' ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* 顶栏 */}
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4 dark:border-neutral-800">
           <button
             onClick={() => {
               setCurrentTask(null)
               setActivePanel('history')
             }}
-            className="rounded-lg p-2 hover:bg-neutral-100"
+            className="rounded-lg p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
-            <ArrowLeft className="h-5 w-5 text-neutral-600" />
+            <ArrowLeft className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
           </button>
-          <h1 className="flex-1 truncate text-lg font-semibold text-gray-800">
+          <h1 className="flex-1 truncate text-lg font-semibold text-gray-800 dark:text-gray-200">
             {isGenerating ? '生成中…' : currentTask?.audioMeta?.title || '笔记详情'}
           </h1>
         </header>

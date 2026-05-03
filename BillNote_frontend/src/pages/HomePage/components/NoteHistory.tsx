@@ -142,7 +142,7 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="line-clamp-2 max-w-[180px] flex-1 overflow-hidden text-sm text-ellipsis">
+                      <div className="line-clamp-2 flex-1 overflow-hidden text-sm text-ellipsis">
                         {task.audioMeta.title || '未命名笔记'}
                       </div>
                     </TooltipTrigger>
