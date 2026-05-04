@@ -1,6 +1,6 @@
 import {useTaskStore} from '@/store/taskStore'
 import {cn} from '@/lib/utils.ts'
-import {Loader2, Trash} from 'lucide-react'
+import {Loader2, Trash, X} from 'lucide-react'
 import {Button} from '@/components/ui/button.tsx'
 
 import {
@@ -71,11 +71,11 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
   return (
     <>
       {/* 搜索输入框 - 始终在同一个位置渲染，避免失焦 */}
-      <div className="mb-2">
+      <div className="relative mb-2">
         <input
             type="text"
             placeholder="搜索笔记标题..."
-            className="w-full rounded border border-neutral-300 px-3 py-1 text-sm outline-none focus:border-primary dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
+            className="w-full rounded border border-neutral-300 px-3 py-1 pr-7 text-sm outline-none focus:border-primary dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
             value={search}
             onChange={e => setSearch(e.target.value)}
             onCompositionStart={() => setIsComposing(true)}
@@ -84,6 +84,15 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
               setSearch((e.target as HTMLInputElement).value)
             }}
         />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {successTasks.length > 0 ? (
