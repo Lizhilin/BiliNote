@@ -75,11 +75,11 @@ async function deployFrontend(isFull) {
 async function deployBackend(isFull) {
   if (isFull) {
     log('--- 后端：全量构建（同步全部源码 + 重建 base） ---', 'blue');
-    await run('scp', ['-r', path.join(__dirname, 'backend/'), `${SERVER}:${REMOTE_DIR}/backend/`]);
+    await run('scp', ['-r', path.join(__dirname, 'backend').replace(/\\/g, '/') + '/', `${SERVER}:${REMOTE_DIR}/backend/`]);
     await ssh(`cd ${REMOTE_DIR} && docker build -f backend/Dockerfile.base -t bilinote-backend-base . && docker-compose build backend && docker-compose up -d backend`);
   } else {
     log('--- 后端：同步 app 代码 ---', 'blue');
-    await run('scp', ['-r', path.join(__dirname, 'backend/app/'), `${SERVER}:${REMOTE_DIR}/backend/app/`]);
+    await run('scp', ['-r', path.join(__dirname, 'backend', 'app').replace(/\\/g, '/') + '/', `${SERVER}:${REMOTE_DIR}/backend/app/`]);
     log('--- 后端：远程构建 ---', 'blue');
     await ssh(`cd ${REMOTE_DIR} && docker-compose build backend && docker-compose up -d backend`);
   }
