@@ -23,14 +23,7 @@ export const generateNote = async (data: {
       toast.error('请求异常，生成笔记失败')
       return null
     }
-    if (response.data.msg) {
-      toast.error(response.data.msg)
-      return null
-    }
     toast.success('笔记生成任务已提交！')
-
-    console.log('res', response)
-    // 成功提示
 
     return response
   } catch (e: unknown) {
