@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Copy, Download, BrainCircuit, MessageSquare } from 'lucide-react'
+import { Copy, Download, BrainCircuit, MessageSquare, Volume2, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
+import { useSpeech } from '@/hooks/useSpeech'
 
 interface VersionNote {
   ver_id: string
@@ -33,6 +34,8 @@ interface NoteHeaderProps {
   setShowChat?: (mode: false | 'half' | 'full') => void
   viewMode: 'preview' | 'map'
   setViewMode: (mode: 'preview' | 'map') => void
+  /** 用于语音朗读的文本内容 */
+  speechContent?: string
 }
 
 export function MarkdownHeader({
@@ -52,8 +55,10 @@ export function MarkdownHeader({
   setShowChat,
   viewMode,
   setViewMode,
+  speechContent,
 }: NoteHeaderProps) {
   const [copied, setCopied] = useState(false)
+  const speech = useSpeech()
 
   useEffect(() => {
     let timer: NodeJS.Timeout
@@ -128,6 +133,48 @@ export function MarkdownHeader({
 
       {/* 右侧操作按钮 */}
       <div className="flex items-center gap-0.5 md:gap-1">
+        {speechContent && (
+          <div className="flex items-center gap-0.5">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => speech.toggle(speechContent)}
+                    variant={speech.state !== 'idle' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-8 px-2"
+                  >
+                    {speech.state === 'playing' ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                    <span className="hidden text-sm md:inline">
+                      {speech.state === 'playing' ? '暂停' : speech.state === 'paused' ? '继续' : '朗读'}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {speech.state === 'playing' ? '暂停朗读' : speech.state === 'paused' ? '继续朗读' : '朗读全文'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {speech.voices.length > 0 && (
+              <Select value={speech.selectedVoiceName} onValueChange={speech.setSelectedVoiceName}>
+                <SelectTrigger className="h-8 w-[140px] text-xs md:w-[170px]">
+                  <span className="truncate">{speech.selectedVoiceName.replace(/ - .*$/, '') || '语音'}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {speech.voices.map(v => (
+                    <SelectItem key={v.name} value={v.name} className="text-xs">
+                      {v.name.replace(/ - .*$/, '')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        )}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

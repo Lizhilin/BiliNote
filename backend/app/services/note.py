@@ -230,7 +230,10 @@ class NoteGenerator:
             self._update_status(task_id, TaskStatus.SAVING)
             self._save_metadata(video_id=audio_meta.video_id, platform=platform, task_id=task_id)
 
-            # 6. 完成
+            # 6. 清理下载的音频/视频文件
+            self._cleanup_temp_files(audio_meta.file_path, self.video_path)
+
+            # 7. 完成
             self._update_status(task_id, TaskStatus.SUCCESS)
             logger.info(f"笔记生成成功 (task_id={task_id})")
             return NoteResult(markdown=markdown, transcript=transcript, audio_meta=audio_meta)
@@ -239,6 +242,17 @@ class NoteGenerator:
             logger.error(f"生成笔记流程异常 (task_id={task_id})：{exc}", exc_info=True)
             self._update_status(task_id, TaskStatus.FAILED, message=str(exc))
             return None
+
+    @staticmethod
+    def _cleanup_temp_files(audio_path: Optional[str], video_path: Optional[str]):
+        """清理下载的临时音频/视频文件，释放磁盘空间"""
+        for path in [audio_path, video_path]:
+            if path and os.path.isfile(path):
+                try:
+                    os.remove(path)
+                    logger.info(f"已清理临时文件: {path}")
+                except Exception as e:
+                    logger.warning(f"清理临时文件失败: {path} - {e}")
 
     @staticmethod
     def delete_note(video_id: str, platform: str) -> int:

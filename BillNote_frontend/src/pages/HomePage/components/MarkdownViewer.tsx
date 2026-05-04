@@ -430,6 +430,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
         setShowChat={setShowChat}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        speechContent={selectedContent}
       />
 
       {viewMode === 'map' ? (
