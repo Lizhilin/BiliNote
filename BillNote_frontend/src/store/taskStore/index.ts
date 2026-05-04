@@ -222,7 +222,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
     // 新搜索：重置分页并更新搜索词
     if (page === 1 && search !== state.searchKeyword) {
-      set({ historyPage: 0, searchKeyword: search })
+      set({ searchKeyword: search })
     }
 
     set({ isLoadingHistory: true })
