@@ -1,0 +1,10 @@
+{
+  "name": "bilinote",
+  "private": true,
+  "scripts": {
+    "deploy": "node 构建.js",
+    "deploy:full": "node 构建.js full",
+    "deploy:frontend": "node 构建.js frontend",
+    "deploy:backend": "node 构建.js backend"
+  }
+}
