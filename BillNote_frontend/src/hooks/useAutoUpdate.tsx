@@ -5,7 +5,9 @@ const CHECK_INTERVAL = 30000
 const SCRIPT_REGEX = /<script[^>]+src=["']([^"']+)["']/g
 
 function getCurrentScripts(): string[] {
-  return Array.from(document.querySelectorAll('script[src]')).map(s => (s as HTMLScriptElement).src)
+  return Array.from(document.querySelectorAll('script[src]'))
+    .map(s => (s as HTMLScriptElement).src)
+    .filter(url => url.includes('/assets/'))
 }
 
 async function fetchLatestScripts(): Promise<string[]> {
@@ -14,7 +16,7 @@ async function fetchLatestScripts(): Promise<string[]> {
   const urls: string[] = []
   let match: RegExpExecArray | null
   while ((match = SCRIPT_REGEX.exec(html)) !== null) {
-    urls.push(match[1])
+    if (match[1].includes('/assets/')) urls.push(match[1])
   }
   return urls
 }
