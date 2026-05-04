@@ -11,7 +11,7 @@ export interface AudioMeta {
   duration: number
   file_path: string
   platform: string
-  raw_info: any
+  raw_info: unknown
   title: string
   video_id: string
 }
@@ -25,7 +25,7 @@ export interface Segment {
 export interface Transcript {
   full_text: string
   language: string
-  raw: any
+  raw: unknown
   segments: Segment[]
 }
 export interface Markdown {
@@ -51,6 +51,7 @@ export interface Task {
     quality: string
     model_name: string
     provider_id: string
+    style: string
   }
 }
 
@@ -60,14 +61,15 @@ interface TaskStore {
   historyPage: number
   historyHasMore: boolean
   isLoadingHistory: boolean
-  addPendingTask: (taskId: string, platform: string, formData?: any) => void
+  searchKeyword: string
+  addPendingTask: (taskId: string, platform: string, formData?: Record<string, unknown>) => void
   updateTaskContent: (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>) => void
   removeTask: (id: string) => void
   clearTasks: () => void
   setCurrentTask: (taskId: string | null) => void
   getCurrentTask: () => Task | null
-  retryTask: (id: string, payload?: any) => Promise<void>
-  fetchHistory: (page?: number) => Promise<void>
+  retryTask: (id: string, payload?: Record<string, unknown>) => Promise<void>
+  fetchHistory: (page?: number, search?: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>()((set, get) => ({
@@ -76,12 +78,22 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
   historyPage: 0,
   historyHasMore: false,
   isLoadingHistory: false,
+  searchKeyword: '',
 
-  addPendingTask: (taskId: string, platform: string, formData: any) =>
+  addPendingTask: (taskId: string, platform: string, formData?: Record<string, unknown>) =>
     set(state => ({
       tasks: [
         {
-          formData: formData,
+          formData: (formData || {
+            video_url: '',
+            link: undefined,
+            screenshot: undefined,
+            platform: platform,
+            quality: '',
+            model_name: '',
+            provider_id: '',
+            style: '',
+          }) as Task['formData'],
           id: taskId,
           status: 'PENDING' as TaskStatus,
           markdown: '',
@@ -160,7 +172,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     return get().tasks.find(task => task.id === currentTaskId) || null
   },
 
-  retryTask: async (id: string, payload?: any) => {
+  retryTask: async (id: string, payload?: Record<string, unknown>) => {
     if (!id) {
       toast.error('任务不存在')
       return
@@ -172,12 +184,14 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     await generateNote({
       ...newFormData,
       task_id: id,
-    })
+      format: [],
+      grid_size: [],
+    } as Parameters<typeof generateNote>[0])
 
     set(state => ({
       tasks: state.tasks.map(t =>
           t.id === id
-              ? { ...t, formData: newFormData, status: 'PENDING' as TaskStatus }
+              ? { ...t, formData: newFormData as Task['formData'], status: 'PENDING' as TaskStatus }
               : t
       ),
     }))
@@ -200,33 +214,45 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   setCurrentTask: taskId => set({ currentTaskId: taskId }),
 
-  fetchHistory: async (page: number = 1) => {
+  fetchHistory: async (page: number = 1, search: string = '') => {
     const state = get()
-    if (state.isLoadingHistory) return
+
+    // 翻页：搜索词变了就丢弃（过期并发翻页请求）
+    if (page > 1 && search !== state.searchKeyword) return
+
+    // 新搜索：重置分页并更新搜索词
+    if (page === 1 && search !== state.searchKeyword) {
+      set({ historyPage: 0, searchKeyword: search })
+    }
+
     set({ isLoadingHistory: true })
     try {
-      const res = await getTaskHistory(page, 20)
-      const { items, has_more } = res as {
-        items: any[]
+      const res = await getTaskHistory(page, 20, search)
+
+      // 请求返回时搜索词已变 → 丢弃过期结果
+      if (search !== get().searchKeyword) return
+
+      const { items, has_more } = res as unknown as {
+        items: Record<string, unknown>[]
         total: number
         page: number
         page_size: number
         has_more: boolean
       }
-      const historyTasks: Task[] = items.map((item: any) => ({
-        id: item.task_id,
-        platform: item.platform || '',
-        markdown: item.markdown || '',
+      const historyTasks: Task[] = items.map((item: Record<string, unknown>) => ({
+        id: item.task_id as string,
+        platform: (item.platform as string) || '',
+        markdown: (item.markdown as string) || '',
         status: 'SUCCESS' as TaskStatus,
-        createdAt: item.created_at || new Date().toISOString(),
+        createdAt: (item.created_at as string) || new Date().toISOString(),
         audioMeta: {
-          cover_url: item.cover_url || '',
+          cover_url: (item.cover_url as string) || '',
           duration: 0,
           file_path: '',
-          platform: item.platform || '',
+          platform: (item.platform as string) || '',
           raw_info: null,
-          title: item.title || '',
-          video_id: item.video_id || '',
+          title: (item.title as string) || '',
+          video_id: (item.video_id as string) || '',
         },
         transcript: {
           full_text: '',
@@ -238,10 +264,11 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
           video_url: '',
           link: undefined,
           screenshot: undefined,
-          platform: item.platform || '',
+          platform: (item.platform as string) || '',
           quality: '',
           model_name: '',
           provider_id: '',
+          style: '',
         },
       }))
       set(s => {
@@ -270,7 +297,9 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       })
     } catch (e) {
       console.warn('获取历史笔记失败:', e)
-      set({ isLoadingHistory: false })
+      if (search === get().searchKeyword) {
+        set({ isLoadingHistory: false })
+      }
     }
   },
 }))

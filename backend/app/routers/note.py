@@ -258,8 +258,9 @@ def get_task_status(task_id: str):
 def get_task_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    search: str = Query("", max_length=100),
 ):
-    """获取历史笔记列表（分页）"""
+    """获取历史笔记列表（分页），支持按标题搜索"""
     if not os.path.isdir(NOTE_OUTPUT_DIR):
         return R.success({"items": [], "total": 0, "page": page, "page_size": page_size, "has_more": False})
 
@@ -279,19 +280,22 @@ def get_task_history(
 
     # ② 按 mtime 降序
     entries.sort(key=lambda x: x[1], reverse=True)
-    total = len(entries)
-    has_more = page * page_size < total
-    start = (page - 1) * page_size
-    page_entries = entries[start: start + page_size]
 
-    # ③ 读取当前页的详细内容
-    items = []
-    for fname, mtime in page_entries:
+    # ③ 读取所有条目，按标题搜索过滤，再分页
+    all_items = []
+    for fname, mtime in entries:
         task_id = fname.replace(".json", "")
         try:
             with open(os.path.join(NOTE_OUTPUT_DIR, fname), "r", encoding="utf-8") as f:
                 data = json.load(f)
             audio_meta = data.get("audio_meta", {})
+            title = audio_meta.get("title", "")
+
+            # 搜索过滤（大小写不敏感）
+            if search:
+                if search.lower() not in title.lower():
+                    continue
+
             status_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.status.json")
             status = "UNKNOWN"
             if os.path.exists(status_path):
@@ -299,9 +303,9 @@ def get_task_history(
                     st = json.load(f)
                 status = st.get("status", "UNKNOWN")
             created_at = datetime.fromtimestamp(mtime).isoformat()
-            items.append({
+            all_items.append({
                 "task_id": task_id,
-                "title": audio_meta.get("title", ""),
+                "title": title,
                 "platform": audio_meta.get("platform", ""),
                 "video_id": audio_meta.get("video_id", ""),
                 "cover_url": audio_meta.get("cover_url", ""),
@@ -313,8 +317,13 @@ def get_task_history(
             logger.warning(f"读取历史笔记 {fname} 失败: {e}")
             continue
 
+    total = len(all_items)
+    has_more = page * page_size < total
+    start = (page - 1) * page_size
+    page_items = all_items[start: start + page_size]
+
     return R.success({
-        "items": items,
+        "items": page_items,
         "total": total,
         "page": page,
         "page_size": page_size,

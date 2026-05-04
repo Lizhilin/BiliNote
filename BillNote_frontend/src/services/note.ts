@@ -58,11 +58,13 @@ export const delete_task = async ({ task_id }: { task_id: string }) => {
   }
 }
 
-export const getTaskHistory = async (page = 1, pageSize = 20) => {
+export const getTaskHistory = async (page = 1, pageSize = 20, search = '') => {
   try {
-    const res = await request.get('/task_history', {
-      params: { page, page_size: pageSize },
-    })
+    const params: Record<string, string | number> = { page, page_size: pageSize }
+    if (search.trim()) {
+      params.search = search.trim()
+    }
+    const res = await request.get('/task_history', { params })
     return res
   } catch (e) {
     console.error('❌ 获取历史笔记失败', e)
