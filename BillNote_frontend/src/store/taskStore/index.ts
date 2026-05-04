@@ -60,13 +60,13 @@ interface TaskStore {
   historyPage: number
   historyHasMore: boolean
   isLoadingHistory: boolean
-  addPendingTask: (taskId: string, platform: string) => void
+  addPendingTask: (taskId: string, platform: string, formData?: any) => void
   updateTaskContent: (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>) => void
   removeTask: (id: string) => void
   clearTasks: () => void
   setCurrentTask: (taskId: string | null) => void
   getCurrentTask: () => Task | null
-  retryTask: (id: string) => void
+  retryTask: (id: string, payload?: any) => Promise<void>
   fetchHistory: (page?: number) => Promise<void>
 }
 

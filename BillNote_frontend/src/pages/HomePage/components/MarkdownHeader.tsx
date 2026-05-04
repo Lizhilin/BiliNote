@@ -27,9 +27,12 @@ interface NoteHeaderProps {
   onCopy: () => void
   onDownload: () => void
   createAt?: string | Date
+  showTranscribe: boolean
   setShowTranscribe: (show: boolean) => void
   showChat?: false | 'half' | 'full'
   setShowChat?: (mode: false | 'half' | 'full') => void
+  viewMode: 'preview' | 'map'
+  setViewMode: (mode: 'preview' | 'map') => void
 }
 
 export function MarkdownHeader({
@@ -67,10 +70,6 @@ export function MarkdownHeader({
 
   const styleName = noteStyles.find(v => v.value === style)?.label || style
 
-  const reversedMarkdown: VersionNote[] = Array.isArray(currentTask?.markdown)
-    ? [...currentTask!.markdown].reverse()
-    : []
-
   const formatDate = (date: string | Date | undefined) => {
     if (!date) return ''
     const d = typeof date === 'string' ? new Date(date) : date
@@ -87,7 +86,7 @@ export function MarkdownHeader({
   }
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-white/95 px-2 py-2 backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-950/95 md:gap-3 md:px-4">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-white/95 px-2 py-2 text-foreground backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-950/95 md:gap-3 md:px-4">
       {/* 左侧区域：版本 + 标签 + 创建时间 */}
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
         {isMultiVersion && (
@@ -95,14 +94,15 @@ export function MarkdownHeader({
             <SelectTrigger className="h-8 w-[130px] text-sm md:w-[160px]">
               <div className="flex items-center">
                 {(() => {
-                  const idx = currentTask?.markdown.findIndex(v => v.ver_id === currentVerId)
+                  const list = currentTask?.markdown as VersionNote[] | undefined
+                  const idx = list?.findIndex(v => v.ver_id === currentVerId) ?? -1
                   return idx !== -1 ? `版本（${currentVerId.slice(-6)}）` : ''
                 })()}
               </div>
             </SelectTrigger>
 
             <SelectContent>
-              {(currentTask?.markdown || []).map((v, idx) => {
+              {(currentTask?.markdown as VersionNote[] | undefined)?.map(v => {
                 const shortId = v.ver_id.slice(-6)
                 return (
                   <SelectItem key={v.ver_id} value={v.ver_id}>

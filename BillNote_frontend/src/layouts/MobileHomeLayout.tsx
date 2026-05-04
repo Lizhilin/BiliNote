@@ -1,5 +1,5 @@
 import React, { FC, useState, useEffect } from 'react'
-import { Plus, ArrowLeft, SlidersHorizontal, Moon, Sun } from 'lucide-react'
+import { Plus, ArrowLeft, SlidersHorizontal, Moon, Sun, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTaskStore } from '@/store/taskStore'
 import { useModelStore } from '@/store/modelStore'
@@ -39,6 +39,11 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
   const currentTask = tasks.find(t => t.id === currentTaskId)
   const isGenerating = currentTask && !['SUCCESS', 'FAILED', undefined].includes(currentTask?.status)
   const { theme, toggle: toggleTheme } = useTheme()
+  const fetchHistory = useTaskStore(state => state.fetchHistory)
+
+  const handleRefresh = () => {
+    fetchHistory(1)
+  }
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-white dark:bg-neutral-950" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -57,6 +62,9 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
             <div className="text-xl font-bold text-gray-800 dark:text-gray-200">Note</div>
           </div>
           <div className="flex items-center gap-1">
+            <button onClick={handleRefresh} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
+              <RefreshCw className="h-5 w-5" />
+            </button>
             <button onClick={toggleTheme} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>

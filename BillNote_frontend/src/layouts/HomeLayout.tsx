@@ -1,5 +1,5 @@
 import React, { FC, useRef, useState } from 'react'
-import { SlidersHorizontal, PanelLeftClose, PanelLeftOpen, History as HistoryIcon, Moon, Sun } from 'lucide-react'
+import { RefreshCw, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, History as HistoryIcon, Moon, Sun } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area.tsx"
 import type { ImperativePanelHandle } from 'react-resizable-panels'
 import logo from '@/assets/icon.svg'
 import { useTheme } from '@/hooks/useTheme.ts'
+import { useTaskStore } from '@/store/taskStore'
 
 interface IProps {
   NoteForm: React.ReactNode
@@ -27,6 +28,11 @@ const HomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
   const leftPanelRef = useRef<ImperativePanelHandle>(null)
   const middlePanelRef = useRef<ImperativePanelHandle>(null)
   const { theme, toggle: toggleTheme } = useTheme()
+  const fetchHistory = useTaskStore(state => state.fetchHistory)
+
+  const handleRefresh = () => {
+    fetchHistory(1)
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -122,6 +128,21 @@ const HomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
             <header className="flex h-10 shrink-0 items-center justify-between border-b border-neutral-100 px-3 dark:border-neutral-800">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">生成历史</span>
               <div className="flex items-center gap-0.5">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-muted-foreground hover:text-primary cursor-pointer rounded p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>刷新历史</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
