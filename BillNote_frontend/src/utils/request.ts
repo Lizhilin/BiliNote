@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast'
 
 // 统一响应类型
@@ -19,6 +19,21 @@ const baseURL = import.meta.env.VITE_API_BASE_URL;
   timeout: 10000,
 });
 
+// 请求拦截器：自动附加 token
+request.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // 登录接口不需要 token
+    if (config.url?.includes('/auth/login')) return config
+
+    const token = localStorage.getItem('auth_token')
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse<IResponse>) => {
@@ -37,6 +52,14 @@ request.interceptors.response.use(
   (error) => {
     // 网络/服务器错误
     const res = error?.response?.data as IResponse | undefined;
+
+    // 401 未登录：清除 token 并跳转登录页
+    if (error?.response?.status === 401) {
+      localStorage.removeItem('auth_token')
+      window.location.href = '/login'
+      return Promise.reject(res || { code: 401, msg: '未登录', data: null })
+    }
+
     if (res) {
       // 如果后端有返回错误信息，则显示后端信息
       // If the backend returns an error message, display it

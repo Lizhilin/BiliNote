@@ -201,19 +201,6 @@ def download_transcriber_model(data: ModelDownloadRequest, background_tasks: Bac
     return R.success(msg="模型下载已开始")
 
 
-@router.get("/sys_health")
-async def sys_health():
-    try:
-        ensure_ffmpeg_or_raise()
-        return R.success()
-    except EnvironmentError:
-        return R.error(msg="系统未安装 ffmpeg 请先进行安装")
-
-@router.get("/sys_check")
-async def sys_check():
-    return R.success()
-
-
 @router.get("/deploy_status")
 async def deploy_status():
     """返回部署监控所需的所有状态信息"""

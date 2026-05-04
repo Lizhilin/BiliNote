@@ -1,13 +1,15 @@
 import './App.css'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { useTaskPolling } from '@/hooks/useTaskPolling.ts'
 import { useCheckBackend } from '@/hooks/useCheckBackend.ts'
 import { useAutoUpdate } from '@/hooks/useAutoUpdate.tsx'
 import { systemCheck } from '@/services/system.ts'
+import { getToken, clearToken, checkAuth } from '@/services/auth.ts'
 import BackendInitDialog from '@/components/BackendInitDialog'
 import Index from '@/pages/Index.tsx'
 import { HomePage } from './pages/HomePage/Home.tsx'
+import LoginPage from '@/pages/LoginPage/index.tsx'
 
 // 非首屏页面使用 React.lazy 按需加载
 const SettingPage = lazy(() => import('./pages/SettingPage/index.tsx'))
@@ -19,6 +21,34 @@ const Downloader = lazy(() => import('@/pages/SettingPage/Downloader.tsx'))
 const DownloaderForm = lazy(() => import('@/components/Form/DownloaderForm/Form.tsx'))
 const TranscriberPage = lazy(() => import('@/pages/SettingPage/transcriber.tsx'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const [authed, setAuthed] = useState<'loading' | 'yes' | 'no'>('loading')
+
+  useEffect(() => {
+    const token = getToken()
+    if (!token) {
+      setAuthed('no')
+      return
+    }
+    checkAuth()
+      .then(() => setAuthed('yes'))
+      .catch(() => {
+        clearToken()
+        setAuthed('no')
+      })
+  }, [])
+
+  if (authed === 'loading') {
+    return <div className="flex h-screen items-center justify-center text-neutral-400">验证登录状态…</div>
+  }
+
+  if (authed === 'no') {
+    return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
+}
 
 function App() {
   useTaskPolling(3000) // 每 3 秒轮询一次
@@ -47,7 +77,15 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="flex h-screen items-center justify-center">加载中…</div>}>
           <Routes>
-            <Route path="/" element={<Index />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/"
+              element={
+                <AuthGuard>
+                  <Index />
+                </AuthGuard>
+              }
+            >
               <Route index element={<HomePage />} />
               <Route path="settings" element={<SettingPage />}>
                 <Route index element={<Navigate to="model" replace />} />
@@ -61,6 +99,7 @@ function App() {
                 <Route path="transcriber" element={<TranscriberPage />} />
                 <Route path="monitor" element={<Monitor />}></Route>
                 <Route path="about" element={<AboutPage />}></Route>
+                <Route path="change-password" element={<LoginPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
