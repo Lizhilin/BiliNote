@@ -20,9 +20,11 @@ export const generateNote = async (data: {
     const response = await request.post('/generate_note', data)
 
     if (!response) {
-      if (response.data.msg) {
-        toast.error(response.data.msg)
-      }
+      toast.error('请求异常，生成笔记失败')
+      return null
+    }
+    if (response.data.msg) {
+      toast.error(response.data.msg)
       return null
     }
     toast.success('笔记生成任务已提交！')
@@ -31,7 +33,7 @@ export const generateNote = async (data: {
     // 成功提示
 
     return response
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('❌ 请求出错', e)
 
     // 错误提示
@@ -41,7 +43,7 @@ export const generateNote = async (data: {
   }
 }
 
-export const delete_task = async ({ task_id }) => {
+export const delete_task = async ({ task_id }: { task_id: string }) => {
   try {
     const data = { task_id }
     const res = await request.post('/delete_task', data)
