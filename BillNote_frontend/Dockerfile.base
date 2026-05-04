@@ -1,0 +1,8 @@
+FROM node:20-bullseye-slim
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY BillNote_frontend/package.json BillNote_frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
