@@ -30,34 +30,48 @@ export function useSpeech() {
 
   // 收集所有中文相关语音
   useEffect(() => {
-    const handler = () => {
-      const all = window.speechSynthesis.getVoices()
-      const zh = all.filter(v => v.lang.startsWith('zh'))
-      setVoices(zh)
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
 
-      // 只在首次加载时设置默认语音
-      setSelectedVoiceName(prev => {
-        if (prev) return prev // 已有选择，不动
-        const defaultVoice =
-          zh.find(v => v.name.startsWith('Microsoft Yaoyao'))  // 用户指定离线默认
-          || zh.find(v => v.name.startsWith('Microsoft Xiaoxiao Online (Natural)'))
-          || zh.find(v => v.name.startsWith('Microsoft Xiaoxiao'))
-          || zh[0]
-        return defaultVoice?.name || ''
-      })
+    const handler = () => {
+      try {
+        const all = window.speechSynthesis.getVoices()
+        const zh = all.filter(v => v.lang.startsWith('zh'))
+        setVoices(zh)
+
+        // 只在首次加载时设置默认语音
+        setSelectedVoiceName(prev => {
+          if (prev) return prev // 已有选择，不动
+          const defaultVoice =
+            zh.find(v => v.name.startsWith('Microsoft Yaoyao'))  // 用户指定离线默认
+            || zh.find(v => v.name.startsWith('Microsoft Xiaoxiao Online (Natural)'))
+            || zh.find(v => v.name.startsWith('Microsoft Xiaoxiao'))
+            || zh[0]
+          return defaultVoice?.name || ''
+        })
+      } catch {
+        // 不支持语音合成的浏览器静默降级
+      }
     }
     handler()
-    window.speechSynthesis.addEventListener('voiceschanged', handler)
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handler)
-      window.speechSynthesis.cancel()
+    try {
+      window.speechSynthesis.addEventListener('voiceschanged', handler)
+      return () => {
+        window.speechSynthesis.removeEventListener('voiceschanged', handler)
+        window.speechSynthesis.cancel()
+      }
+    } catch {
+      return () => {}
     }
   }, [])
 
   const currentVoice = voices.find(v => v.name === selectedVoiceName) || null
 
   const speak = useCallback((text: string) => {
-    window.speechSynthesis.cancel()
+    try {
+      window.speechSynthesis.cancel()
+    } catch {
+      return
+    }
 
     const plain = stripMarkdown(text)
     if (!plain) return
@@ -77,19 +91,35 @@ export function useSpeech() {
     utterance.onerror = () => setState('idle')
 
     utteranceRef.current = utterance
-    window.speechSynthesis.speak(utterance)
+    try {
+      window.speechSynthesis.speak(utterance)
+    } catch {
+      setState('idle')
+    }
   }, [voices, selectedVoiceName, currentVoice])
 
   const pause = useCallback(() => {
-    window.speechSynthesis.pause()
+    try {
+      window.speechSynthesis.pause()
+    } catch {
+      // ignore
+    }
   }, [])
 
   const resume = useCallback(() => {
-    window.speechSynthesis.resume()
+    try {
+      window.speechSynthesis.resume()
+    } catch {
+      // ignore
+    }
   }, [])
 
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel()
+    try {
+      window.speechSynthesis.cancel()
+    } catch {
+      // ignore
+    }
     setState('idle')
   }, [])
 

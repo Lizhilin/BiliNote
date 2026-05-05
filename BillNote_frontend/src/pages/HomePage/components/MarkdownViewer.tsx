@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, memo, FC } from 'react'
+import { useState, useEffect, useRef, useMemo, memo, FC, lazy, Suspense } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Button } from '@/components/ui/button.tsx'
 import { Copy, Download, ArrowRight, Play, ExternalLink } from 'lucide-react'
@@ -14,14 +14,13 @@ import 'react-medium-image-zoom/dist/styles.css'
 import gfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
-import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown-light.css'
 import { ScrollArea } from '@/components/ui/scroll-area.tsx'
 import { useTaskStore } from '@/store/taskStore'
 import { noteStyles } from '@/constant/note.ts'
 import { MarkdownHeader } from '@/pages/HomePage/components/MarkdownHeader.tsx'
 import TranscriptViewer from '@/pages/HomePage/components/transcriptViewer.tsx'
-import MarkmapEditor from '@/pages/HomePage/components/MarkmapComponent.tsx'
+const MarkmapEditor = lazy(() => import('@/pages/HomePage/components/MarkmapComponent.tsx'))
 import ChatPanel from '@/pages/HomePage/components/ChatPanel.tsx'
 import VideoBanner from '@/pages/HomePage/components/VideoBanner.tsx'
 
@@ -321,6 +320,14 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
       setSelectedContent(currentVer.content)
     }
   }, [currentVerId, currentTask?.id])
+
+  // 有内容时才动态加载 KaTeX CSS，避免首页加载大量字体文件
+  useEffect(() => {
+    if (selectedContent && selectedContent !== 'loading' && selectedContent !== 'empty') {
+      import('katex/dist/katex.min.css')
+    }
+  }, [selectedContent])
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(selectedContent)
@@ -434,16 +441,18 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
       />
 
       {viewMode === 'map' ? (
-        <div className="flex w-full flex-1 overflow-hidden bg-white dark:bg-neutral-950">
-          <div className={'w-full'}>
-            <MarkmapEditor
-              value={selectedContent}
-              onChange={() => {}}
-              height="100%" // 根据需求可以设定百分比或固定高度
-              title={currentTask?.audioMeta?.title || '思维导图'}
-            />
+        <Suspense fallback={<div className="flex flex-1 items-center justify-center text-sm text-neutral-400">加载思维导图…</div>}>
+          <div className="flex w-full flex-1 overflow-hidden bg-white dark:bg-neutral-950">
+            <div className={'w-full'}>
+              <MarkmapEditor
+                value={selectedContent}
+                onChange={() => {}}
+                height="100%" // 根据需求可以设定百分比或固定高度
+                title={currentTask?.audioMeta?.title || '思维导图'}
+              />
+            </div>
           </div>
-        </div>
+        </Suspense>
       ) : (
         <div className="flex flex-1 overflow-hidden bg-white py-2 dark:bg-neutral-950 md:py-2">
           {selectedContent && selectedContent !== 'loading' && selectedContent !== 'empty' ? (
