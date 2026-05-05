@@ -74,6 +74,15 @@ export const getTaskDetail = async (task_id: string) => {
   }
 }
 
+export const getTaskTranscript = async (task_id: string) => {
+  try {
+    return await request.get(`/task_detail/${task_id}/transcript`)
+  } catch (e) {
+    console.error('❌ 获取转写文本失败', e)
+    throw e
+  }
+}
+
 export const get_task_status = async (task_id: string) => {
   try {
     // 成功提示

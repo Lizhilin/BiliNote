@@ -21,19 +21,10 @@ import { noteStyles } from '@/constant/note.ts'
 import { MarkdownHeader } from '@/pages/HomePage/components/MarkdownHeader.tsx'
 import TranscriptViewer from '@/pages/HomePage/components/transcriptViewer.tsx'
 const MarkmapEditor = lazy(() => import('@/pages/HomePage/components/MarkmapComponent.tsx'))
-import ChatPanel from '@/pages/HomePage/components/ChatPanel.tsx'
+const ChatPanel = lazy(() => import('@/pages/HomePage/components/ChatPanel.tsx'))
 import VideoBanner from '@/pages/HomePage/components/VideoBanner.tsx'
 
-interface VersionNote {
-  ver_id: string
-  content: string
-  style: string
-  model_name: string
-  created_at?: string
-}
-
 interface MarkdownViewerProps {
-  content?: string | VersionNote[]
   status: 'idle' | 'loading' | 'success' | 'failed'
 }
 
@@ -328,6 +319,13 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
     }
   }, [selectedContent])
 
+  // 打开转写面板时按需加载 transcript
+  useEffect(() => {
+    if (showTranscribe && currentTask && !currentTask.transcript?.segments?.length) {
+      useTaskStore.getState().fetchTranscript(currentTask.id)
+    }
+  }, [showTranscribe, currentTask?.id])
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(selectedContent)
@@ -458,9 +456,11 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
           {selectedContent && selectedContent !== 'loading' && selectedContent !== 'empty' ? (
             <>
               {showChat === 'full' && currentTask ? (
-                <div className="h-full w-full">
-                  <ChatPanel taskId={currentTask.id} mode="full" onModeChange={setShowChat} />
-                </div>
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-neutral-400">加载聊天…</div>}>
+                  <div className="h-full w-full">
+                    <ChatPanel taskId={currentTask.id} mode="full" onModeChange={setShowChat} />
+                  </div>
+                </Suspense>
               ) : (
                 <>
                   <div className="min-w-0 flex-1 overflow-y-auto">
@@ -489,9 +489,11 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                   )}
                   {/* 侧边问答模式：移动端全屏，桌面端各占一半 */}
                   {showChat === 'half' && currentTask && (
-                    <div className="absolute inset-0 z-30 bg-white dark:bg-neutral-900 md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
-                      <ChatPanel taskId={currentTask.id} mode="half" onModeChange={setShowChat} />
-                    </div>
+                    <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-neutral-400">加载聊天…</div>}>
+                      <div className="absolute inset-0 z-30 bg-white dark:bg-neutral-900 md:static md:ml-2 md:h-full md:w-1/2 md:shrink-0">
+                        <ChatPanel taskId={currentTask.id} mode="half" onModeChange={setShowChat} />
+                      </div>
+                    </Suspense>
                   )}
                 </>
               )}

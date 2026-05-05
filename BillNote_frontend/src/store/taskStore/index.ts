@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { delete_task, generateNote, getTaskHistory, getTaskDetail } from '@/services/note.ts'
+import { delete_task, generateNote, getTaskHistory, getTaskDetail, getTaskTranscript } from '@/services/note.ts'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
 
@@ -71,6 +71,7 @@ interface TaskStore {
   retryTask: (id: string, payload?: Record<string, unknown>) => Promise<void>
   fetchHistory: (page?: number, search?: string) => Promise<void>
   fetchDetail: (taskId: string) => Promise<void>
+  fetchTranscript: (taskId: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>()((set, get) => ({
@@ -250,6 +251,21 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       }))
     } catch (e) {
       console.warn('获取笔记详情失败:', e)
+    }
+  },
+
+  fetchTranscript: async (taskId: string) => {
+    try {
+      const res = await getTaskTranscript(taskId)
+      const transcript = res as unknown as Transcript
+      if (!transcript || !transcript.segments) return
+      set(state => ({
+        tasks: state.tasks.map(t =>
+          t.id === taskId ? { ...t, transcript } : t
+        ),
+      }))
+    } catch (e) {
+      console.warn('获取转写文本失败:', e)
     }
   },
 

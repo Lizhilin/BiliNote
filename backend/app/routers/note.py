@@ -346,14 +346,41 @@ def get_task_history(
 
 
 @router.get("/task_detail/{task_id}")
-def get_task_detail(task_id: str):
-    """获取单条笔记的完整内容"""
+def get_task_detail(task_id: str, exclude_transcript: bool = Query(True)):
+    """获取单条笔记的完整内容（默认排除 transcript，按需加载）"""
     result_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.json")
     if not os.path.exists(result_path):
         return R.error("笔记不存在", code=404)
     try:
         with open(result_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+        if exclude_transcript:
+            data.pop("transcript", None)
         return R.success(data)
     except Exception as e:
         return R.error(str(e), code=500)
+
+
+@router.get("/task_detail/{task_id}/transcript")
+def get_task_transcript(task_id: str):
+    """获取单条笔记的转写文本"""
+    # 优先从主文件取
+    result_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.json")
+    if os.path.exists(result_path):
+        try:
+            with open(result_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            transcript = data.get("transcript")
+            if transcript:
+                return R.success(transcript)
+        except Exception:
+            pass
+    # 兜底：转写缓存文件
+    cache_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}_transcript.json")
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                return R.success(json.load(f))
+        except Exception:
+            pass
+    return R.error("转写内容不存在", code=404)
