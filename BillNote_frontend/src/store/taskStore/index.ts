@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { delete_task, generateNote, getTaskHistory } from '@/services/note.ts'
+import { delete_task, generateNote, getTaskHistory, getTaskDetail } from '@/services/note.ts'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
 
@@ -70,6 +70,7 @@ interface TaskStore {
   getCurrentTask: () => Task | null
   retryTask: (id: string, payload?: Record<string, unknown>) => Promise<void>
   fetchHistory: (page?: number, search?: string) => Promise<void>
+  fetchDetail: (taskId: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>()((set, get) => ({
@@ -212,7 +213,45 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   clearTasks: () => set({ tasks: [], currentTaskId: null }),
 
-  setCurrentTask: taskId => set({ currentTaskId: taskId }),
+  setCurrentTask: taskId => {
+    set({ currentTaskId: taskId })
+    // 从历史列表选中 SUCCESS 任务时懒加载详情
+    if (taskId) {
+      const task = get().tasks.find(t => t.id === taskId)
+      if (task && task.status === 'SUCCESS' && !task.markdown) {
+        get().fetchDetail(taskId)
+      }
+    }
+  },
+
+  fetchDetail: async (taskId: string) => {
+    try {
+      const res = await getTaskDetail(taskId)
+      const data = res as unknown as { markdown?: string; transcript?: Transcript; audio_meta?: Record<string, unknown> }
+      set(state => ({
+        tasks: state.tasks.map(t =>
+          t.id === taskId && t.status === 'SUCCESS'
+            ? {
+                ...t,
+                markdown: data.markdown || '',
+                transcript: data.transcript || t.transcript,
+                audioMeta: data.audio_meta
+                  ? {
+                      ...t.audioMeta,
+                      cover_url: (data.audio_meta.cover_url as string) || t.audioMeta.cover_url,
+                      title: (data.audio_meta.title as string) || t.audioMeta.title,
+                      platform: (data.audio_meta.platform as string) || t.audioMeta.platform,
+                      video_id: (data.audio_meta.video_id as string) || t.audioMeta.video_id,
+                    }
+                  : t.audioMeta,
+              }
+            : t
+        ),
+      }))
+    } catch (e) {
+      console.warn('获取笔记详情失败:', e)
+    }
+  },
 
   fetchHistory: async (page: number = 1, search: string = '') => {
     const state = get()
@@ -242,7 +281,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       const historyTasks: Task[] = items.map((item: Record<string, unknown>) => ({
         id: item.task_id as string,
         platform: (item.platform as string) || '',
-        markdown: (item.markdown as string) || '',
+        markdown: '',
         status: 'SUCCESS' as TaskStatus,
         createdAt: (item.created_at as string) || new Date().toISOString(),
         audioMeta: {

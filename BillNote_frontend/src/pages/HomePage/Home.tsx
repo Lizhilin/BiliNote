@@ -19,13 +19,22 @@ const steps = [
   { label: '保存完成', key: 'SUCCESS' },
 ]
 
-function PreviewPanel({ status, taskStatus }: { status: ViewStatus; taskStatus?: string }) {
+function PreviewPanel({ status, taskStatus, detailLoading }: { status: ViewStatus; taskStatus?: string; detailLoading?: boolean }) {
   if (status === 'idle') {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center space-y-3 text-neutral-500 dark:text-neutral-400">
         <div className="text-center">
           <p className="text-lg font-bold dark:text-neutral-300">输入视频链接并点击"生成笔记"</p>
           <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">支持哔哩哔哩、YouTube 、抖音等视频平台</p>
+        </div>
+      </div>
+    )
+  }
+  if (status === 'loading' && detailLoading) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-4 text-neutral-500 dark:text-neutral-400">
+        <div className="text-center text-sm">
+          <p className="text-lg font-bold dark:text-neutral-300">加载笔记内容…</p>
         </div>
       </div>
     )
@@ -63,18 +72,29 @@ export const HomePage: FC = () => {
   const currentTask = tasks.find(t => t.id === currentTaskId)
 
   const [status, setStatus] = useState<ViewStatus>('idle')
+  const [detailLoading, setDetailLoading] = useState(false)
 
   useEffect(() => {
     if (!currentTask) {
       setStatus('idle')
+      setDetailLoading(false)
     } else if (currentTask.status === 'SUCCESS') {
-      setStatus('success')
+      // 历史列表 SUCCESS 任务 markdown 为空 → 正在懒加载详情
+      if (!currentTask.markdown) {
+        setDetailLoading(true)
+        setStatus('loading')
+      } else {
+        setDetailLoading(false)
+        setStatus('success')
+      }
     } else if (currentTask.status === 'FAILED') {
+      setDetailLoading(false)
       setStatus('failed')
     } else {
+      setDetailLoading(false)
       setStatus('loading')
     }
-  }, [currentTask, currentTask?.status])
+  }, [currentTask, currentTask?.status, currentTask?.markdown])
 
   const isMobile = useIsMobile()
   const Layout = isMobile ? MobileHomeLayout : HomeLayout
@@ -82,7 +102,7 @@ export const HomePage: FC = () => {
   return (
     <Layout
       NoteForm={<NoteForm />}
-      Preview={<PreviewPanel status={status} taskStatus={currentTask?.status} />}
+      Preview={<PreviewPanel status={status} taskStatus={currentTask?.status} detailLoading={detailLoading} />}
       History={<History />}
     />
   )

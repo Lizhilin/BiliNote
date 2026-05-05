@@ -65,6 +65,15 @@ export const getTaskHistory = async (page = 1, pageSize = 20, search = '') => {
   }
 }
 
+export const getTaskDetail = async (task_id: string) => {
+  try {
+    return await request.get('/task_detail/' + task_id)
+  } catch (e) {
+    console.error('❌ 获取笔记详情失败', e)
+    throw e
+  }
+}
+
 export const get_task_status = async (task_id: string) => {
   try {
     // 成功提示

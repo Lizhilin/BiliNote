@@ -326,7 +326,6 @@ def get_task_history(
                 "cover_url": audio_meta.get("cover_url", ""),
                 "status": status,
                 "created_at": created_at,
-                "markdown": data.get("markdown", ""),
             })
         except Exception as e:
             logger.warning(f"读取历史笔记 {fname} 失败: {e}")
