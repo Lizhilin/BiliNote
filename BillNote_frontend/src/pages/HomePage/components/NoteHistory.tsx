@@ -25,7 +25,6 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
   const isLoadingHistory = useTaskStore(state => state.isLoadingHistory)
   const historyPage = useTaskStore(state => state.historyPage)
   // 图片代理走同源 /api/ 路径，兼容 localhost 和 IP 访问
-  const proxyCover = (url: string) => `/api/image_proxy?url=${encodeURIComponent(url)}`
   const [search, setSearch] = useState('')
   const [isComposing, setIsComposing] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -113,7 +112,7 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                   {/* 封面图 */}
                   {task.audioMeta.cover_url ? (
                     task.audioMeta.cover_url.startsWith('http') ? (
-                      <LazyImage src={proxyCover(task.audioMeta.cover_url)} alt="封面" />
+                      <LazyImage src={task.audioMeta.cover_url} alt="封面" />
                     ) : (
                       <img src={task.audioMeta.cover_url} alt="封面" className="h-10 w-12 rounded-md object-cover" />
                     )

@@ -18,10 +18,10 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
   if (!audioMeta) return null
 
   const rawCover = audioMeta.cover_url
-  // 外部 URL 走代理，本地路径直接使用
+  // 外部 URL 直接加载（加 referrerPolicy 绕过防盗链），避免走代理导致请求链过长
   const coverUrl = rawCover
     ? rawCover.startsWith('http')
-      ? `/api/image_proxy?url=${encodeURIComponent(rawCover)}`
+      ? rawCover
       : rawCover
     : ''
   const title = audioMeta.title
