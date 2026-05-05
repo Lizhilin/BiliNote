@@ -213,6 +213,14 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
           {/* 触底加载 sentinel */}
           <div ref={sentinelRef} className="h-4" />
 
+          {/* 分页加载中 */}
+          {isLoadingHistory && historyPage > 0 && (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-neutral-400 dark:text-neutral-500" />
+              <span className="ml-2 text-sm text-neutral-400 dark:text-neutral-500">加载中…</span>
+            </div>
+          )}
+
           {/* 没有更多 */}
           {!historyHasMore && historyPage > 0 && (
             <div className="py-4 text-center text-sm text-neutral-300 dark:text-neutral-600">没有更多了</div>
