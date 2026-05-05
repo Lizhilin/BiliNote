@@ -1,5 +1,6 @@
 # app/routers/note.py
 import json
+import hashlib
 import os
 import uuid
 from datetime import datetime
@@ -131,6 +132,23 @@ def delete_task(data: DeleteRequest):
             if f.startswith(task_id):
                 os.remove(os.path.join(NOTE_OUTPUT_DIR, f))
                 deleted += 1
+
+        # 尝试清理缓存的封面图
+        try:
+            result_path = os.path.join(NOTE_OUTPUT_DIR, f"{task_id}.json")
+            if os.path.exists(result_path):
+                with open(result_path, "r", encoding="utf-8") as f:
+                    task_data = json.load(f)
+                cover_url = task_data.get("audioMeta", {}).get("cover_url", "")
+                if cover_url:
+                    h = hashlib.sha256(cover_url.encode()).hexdigest()[:16]
+                    CACHE_DIR = "static/cover_cache"
+                    if os.path.isdir(CACHE_DIR):
+                        for fname in os.listdir(CACHE_DIR):
+                            if fname.startswith(h):
+                                os.remove(os.path.join(CACHE_DIR, fname))
+        except Exception:
+            pass  # 清理封面失败不影响删除
 
         # 从数据库删除
         db = next(get_db())

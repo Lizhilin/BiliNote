@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { useSpeech } from '@/hooks/useSpeech'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface VersionNote {
   ver_id: string
@@ -59,6 +60,7 @@ export function MarkdownHeader({
 }: NoteHeaderProps) {
   const [copied, setCopied] = useState(false)
   const speech = useSpeech()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     let timer: NodeJS.Timeout
@@ -133,8 +135,9 @@ export function MarkdownHeader({
 
       {/* 右侧操作按钮 */}
       <div className="flex items-center gap-0.5 md:gap-1">
-        {speechContent && (
+        {!isMobile && speechContent && (
           <div className="flex items-center gap-0.5">
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

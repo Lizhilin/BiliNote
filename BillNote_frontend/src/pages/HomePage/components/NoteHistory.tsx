@@ -28,9 +28,14 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
   const [search, setSearch] = useState('')
   const [isComposing, setIsComposing] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const isInitialMount = useRef(true)
 
-  // 搜索防抖：输入变化后 300ms 再发起请求（输入法组合中不触发）
+  // 搜索时请求第 1 页（初始 mount 跳过，由 Home.tsx 负责首次加载）
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     if (isComposing) return
     const timer = setTimeout(() => {
       fetchHistory(1, search)
@@ -112,7 +117,17 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                   {/* 封面图 */}
                   {task.audioMeta.cover_url ? (
                     task.audioMeta.cover_url.startsWith('http') ? (
-                      <LazyImage src={task.audioMeta.cover_url} alt="封面" />
+                      <LazyImage
+                        src={import.meta.env.VITE_IMAGE_PROXY_ENABLED === 'true'
+                          ? `/api/image_proxy?url=${encodeURIComponent(task.audioMeta.cover_url)}`
+                          : task.audioMeta.cover_url
+                        }
+                        alt="封面"
+                        fallbackSrc={task.audioMeta.cover_url.startsWith('http')
+                          ? `/api/image_proxy?url=${encodeURIComponent(task.audioMeta.cover_url)}`
+                          : undefined
+                        }
+                      />
                     ) : (
                       <img src={task.audioMeta.cover_url} alt="封面" className="h-10 w-12 rounded-md object-cover" />
                     )
@@ -148,14 +163,14 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                         已完成
                       </div>
                     )}
-                    {task.status !== 'SUCCESS' && task.status !== 'FAILD' ? (
+                    {task.status !== 'SUCCESS' && task.status !== 'FAILED' ? (
                       <div className={'w-10 rounded bg-green-500 p-0.5 text-center text-white'}>
                         等待中
                       </div>
                     ) : (
                       <></>
                     )}
-                    {task.status === 'FAILD' && (
+                    {task.status === 'FAILED' && (
                       <div className={'w-10 rounded bg-red-500 p-0.5 text-center text-white'}>失败</div>
                     )}
                   </div>

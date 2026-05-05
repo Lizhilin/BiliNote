@@ -18,16 +18,19 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
   if (!audioMeta) return null
 
   const rawCover = audioMeta.cover_url
-  // 外部 URL 直接加载（加 referrerPolicy 绕过防盗链），避免走代理导致请求链过长
+  const proxyEnabled = import.meta.env.VITE_IMAGE_PROXY_ENABLED === 'true'
   const coverUrl = rawCover
     ? rawCover.startsWith('http')
-      ? rawCover
+      ? proxyEnabled
+        ? `/api/image_proxy?url=${encodeURIComponent(rawCover)}`
+        : rawCover
       : rawCover
     : ''
   const title = audioMeta.title
-  const uploader = audioMeta.raw_info?.uploader || ''
+  const info = audioMeta.raw_info as { uploader?: string; webpage_url?: string } | undefined
+  const uploader = info?.uploader || ''
   const platform = platformLabel[audioMeta.platform] || audioMeta.platform || ''
-  const originalUrl = videoUrl || audioMeta.raw_info?.webpage_url || ''
+  const originalUrl = videoUrl || info?.webpage_url || ''
 
   return (
     <div className="relative mb-4 max-w-full overflow-hidden rounded-lg">
@@ -39,6 +42,11 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
             alt=""
             referrerPolicy="no-referrer"
             className="h-full w-full object-cover blur-md brightness-[0.4] scale-110"
+            onError={(e) => {
+              if (!proxyEnabled && rawCover?.startsWith('http')) {
+                (e.target as HTMLImageElement).src = `/api/image_proxy?url=${encodeURIComponent(rawCover)}`
+              }
+            }}
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-r from-blue-600 to-indigo-700" />
@@ -54,6 +62,11 @@ export default function VideoBanner({ audioMeta, videoUrl }: VideoBannerProps) {
             alt={title}
             referrerPolicy="no-referrer"
             className="h-14 w-24 shrink-0 rounded-md object-cover shadow-md md:h-16 md:w-28"
+            onError={(e) => {
+              if (!proxyEnabled && rawCover?.startsWith('http')) {
+                (e.target as HTMLImageElement).src = `/api/image_proxy?url=${encodeURIComponent(rawCover)}`
+              }
+            }}
           />
         )}
 

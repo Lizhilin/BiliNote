@@ -8,7 +8,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // 在 Docker 环境中，父目录可能没有 .env 文件，使用当前目录
   const envDir = process.env.DOCKER_BUILD ? __dirname : path.resolve(__dirname, '../')
   const env = loadEnv(mode, envDir)
 
@@ -27,7 +26,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            markdown: ['react-markdown', 'react-syntax-highlighter', 'remark-gfm', 'remark-math', 'rehype-katex'],
+            markdown: ['react-markdown', 'react-syntax-highlighter', 'remark-gfm', 'remark-math', 'rehype-katex', 'katex'],
             markmap: ['markmap-lib', 'markmap-view', 'markmap-toolbar', 'markmap-common'],
             vendor: ['react', 'react-dom', 'react-router-dom'],
           },
@@ -37,7 +36,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: port,
-      allowedHosts: true, // 允许任意域名访问
+      allowedHosts: true,
       proxy: {
         '/api': {
           target: apiBaseUrl,

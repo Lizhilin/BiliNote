@@ -12,6 +12,7 @@ const colors = {
 
 const SERVER = 'root@10.3.104.112';
 const REMOTE_DIR = '/docker-run-config/BiliNote';
+const CF_DOMAIN = 'https://note.lzl61219.eu.org';
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
@@ -26,18 +27,16 @@ function run(cmd, args, cwd) {
   });
 }
 
-// 远程执行命令（整个命令用引号包裹，避免 Windows shell 本地解释 &&）
 function ssh(command) {
   return run('ssh', [SERVER, `"${command}"`]);
 }
 
-// 打包前端源码
 function packFrontend() {
   const frontendDir = path.join(__dirname, 'BillNote_frontend');
   return run('tar', [
     'czf', '/tmp/frontend-src.tar.gz',
     '-C', frontendDir,
-    'src', 'package.json', 'pnpm-lock.yaml', 'vite.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'index.html'
+    'src', 'package.json', 'pnpm-lock.yaml', 'vite.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'index.html', '.env', 'deploy/default.conf'
   ]);
 }
 
@@ -85,6 +84,24 @@ async function deployBackend(isFull) {
   }
 }
 
+function warmupCache() {
+  try {
+    const child = spawn('ssh', [SERVER, `docker exec bilinote-frontend sh -c 'ls /usr/share/nginx/html/assets/*.js /usr/share/nginx/html/assets/*.css' 2>/dev/null`]);
+    let data = '';
+    child.stdout.on('data', chunk => data += chunk);
+    child.on('close', code => {
+      if (code !== 0 || !data.trim()) { log('  预热 CDN 缓存: 无资源需预热', 'yellow'); return; }
+      const urls = data.trim().split('\n').filter(Boolean).map(f => '/assets/' + path.basename(f.trim()));
+      log(`  预热 CDN 缓存: ${urls.length} 个资源已在后台触发（不影响构建完成）`, 'cyan');
+      const cmds = urls.map(url => `curl -s -o /dev/null -w '%{http_code}' --max-time 120 '${CF_DOMAIN}${url}'`);
+      const proc = spawn('ssh', [SERVER, `"${cmds.join(' && ')}"`], { shell: true, stdio: 'ignore' });
+      proc.unref();
+    });
+  } catch (err) {
+    log(`  预热 CDN 缓存: ${err.message}`, 'yellow');
+  }
+}
+
 async function main() {
   const raw = process.argv.slice(2);
   const isFull = raw.includes('full');
@@ -107,6 +124,7 @@ async function main() {
   try {
     if (both || doFrontend) {
       await deployFrontend(isFull);
+      warmupCache();
     }
     if (both || doBackend) {
       await deployBackend(isFull);

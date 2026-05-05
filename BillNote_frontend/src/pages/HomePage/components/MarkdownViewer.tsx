@@ -33,7 +33,7 @@ interface VersionNote {
 }
 
 interface MarkdownViewerProps {
-  content: string | VersionNote[]
+  content?: string | VersionNote[]
   status: 'idle' | 'loading' | 'success' | 'failed'
 }
 
