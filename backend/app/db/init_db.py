@@ -12,7 +12,7 @@ load_dotenv()
 
 
 def _seed_user():
-    """从环境变量读取用户名密码，自动创建或更新用户"""
+    """从环境变量读取用户名密码，仅首次创建用户，不覆盖已有密码"""
     username = os.getenv("AUTH_USERNAME", "admin")
     password = os.getenv("AUTH_PASSWORD", "")
     if not password:
@@ -21,11 +21,7 @@ def _seed_user():
     db = next(get_db())
     try:
         user = db.query(User).filter(User.username == username).first()
-        if user:
-            if not bcrypt.verify(password, user.password_hash):
-                user.password_hash = bcrypt.hash(password)
-                db.commit()
-        else:
+        if not user:
             db.add(User(username=username, password_hash=bcrypt.hash(password)))
             db.commit()
     finally:

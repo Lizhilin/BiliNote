@@ -21,9 +21,6 @@ from app.services.task_serial_executor import task_serial_executor
 from app.utils.response import ResponseWrapper as R
 from app.utils.url_parser import extract_video_id
 from app.validators.video_url_validator import is_supported_video_url
-from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import StreamingResponse
-import httpx
 from app.enmus.task_status_enums import TaskStatus
 
 # from app.services.downloader import download_raw_audio
@@ -343,30 +340,3 @@ def get_task_detail(task_id: str):
         return R.success(data)
     except Exception as e:
         return R.error(str(e), code=500)
-
-
-@router.get("/image_proxy")
-async def image_proxy(request: Request, url: str):
-    headers = {
-        "Referer": "https://www.bilibili.com/",
-        "User-Agent": request.headers.get("User-Agent", ""),
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(url, headers=headers)
-
-            if resp.status_code != 200:
-                raise HTTPException(status_code=resp.status_code, detail="图片获取失败")
-
-            content_type = resp.headers.get("Content-Type", "image/jpeg")
-            return StreamingResponse(
-                resp.aiter_bytes(),
-                media_type=content_type,
-                headers={
-                    "Cache-Control": "public, max-age=86400",  #  缓存一天
-                    "Content-Type": content_type,
-                }
-            )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
