@@ -133,6 +133,10 @@ async function main() {
       await deployBackend(isFull);
     }
 
+    // 清理悬空镜像 + 构建缓存（不影响正在运行的容器）
+    log('--- 清理悬空镜像 + 构建缓存 ---', 'yellow');
+    await ssh(`cd ${REMOTE_DIR} && docker image prune -f && docker builder prune -f`);
+
     log('', 'reset');
     log('============================================', 'green');
     log(`     构建完成，${parts.join(' + ')} 已更新`, 'green');
