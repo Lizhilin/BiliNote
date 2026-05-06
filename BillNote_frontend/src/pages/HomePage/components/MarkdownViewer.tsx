@@ -275,6 +275,10 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
   const [showTranscribe, setShowTranscribe] = useState(false)
   const [showChat, setShowChat] = useState<false | 'half' | 'full'>(false)
   const [viewMode, setViewMode] = useState<'map' | 'preview'>('preview')
+  const headerVisible = useTaskStore(s => s.headerVisible)
+  const setHeaderVisible = useTaskStore(s => s.setHeaderVisible)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const contentScrollRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
   // 缓存 ReactMarkdown components，仅在 baseURL 变化时重建
@@ -325,6 +329,43 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
       useTaskStore.getState().fetchTranscript(currentTask.id)
     }
   }, [showTranscribe, currentTask?.id])
+
+  // 沉浸式阅读：内容加载 2s 后自动隐藏 header
+  const clearHideTimer = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }
+  const startHideTimer = (delayMs: number) => {
+    clearHideTimer()
+    hideTimerRef.current = setTimeout(() => setHeaderVisible(false), delayMs)
+  }
+  useEffect(() => {
+    if (selectedContent && selectedContent !== 'loading' && selectedContent !== 'empty') {
+      setHeaderVisible(true)
+      startHideTimer(2000)
+    }
+    return () => {
+      clearHideTimer()
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+    }
+  }, [selectedContent])
+
+  // 沉浸式阅读：内容上滑（scroll down）保持隐藏，内容下滑（scroll up）才展示
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastScrollYRef = useRef(0)
+  const handleContentScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop
+    if (scrollTop < lastScrollYRef.current) {
+      // 内容下滑（scroll up）→ 显示 header，停止滚动 2s 后隐藏
+      setHeaderVisible(true)
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => setHeaderVisible(false), 2000)
+    }
+    // 内容上滑（scroll down）→ 保持隐藏，不做任何事
+    lastScrollYRef.current = scrollTop
+  }
 
   const handleCopy = async () => {
     try {
@@ -418,25 +459,31 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <MarkdownHeader
-        currentTask={currentTask}
-        isMultiVersion={isMultiVersion}
-        currentVerId={currentVerId}
-        setCurrentVerId={setCurrentVerId}
-        modelName={modelName}
-        style={style}
-        noteStyles={noteStyles}
-        onCopy={handleCopy}
-        onDownload={handleDownload}
-        createAt={createTime}
-        showTranscribe={showTranscribe}
-        setShowTranscribe={setShowTranscribe}
-        showChat={showChat}
-        setShowChat={setShowChat}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        speechContent={selectedContent}
-      />
+      <div
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          headerVisible ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <MarkdownHeader
+          currentTask={currentTask}
+          isMultiVersion={isMultiVersion}
+          currentVerId={currentVerId}
+          setCurrentVerId={setCurrentVerId}
+          modelName={modelName}
+          style={style}
+          noteStyles={noteStyles}
+          onCopy={handleCopy}
+          onDownload={handleDownload}
+          createAt={createTime}
+          showTranscribe={showTranscribe}
+          setShowTranscribe={setShowTranscribe}
+          showChat={showChat}
+          setShowChat={setShowChat}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          speechContent={selectedContent}
+        />
+      </div>
 
       {viewMode === 'map' ? (
         <Suspense fallback={<div className="flex flex-1 items-center justify-center text-sm text-neutral-400">加载思维导图…</div>}>
@@ -463,7 +510,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                 </Suspense>
               ) : (
                 <>
-                  <div className="min-w-0 flex-1 overflow-y-auto">
+                  <div ref={contentScrollRef} className="min-w-0 flex-1 overflow-y-auto" onScroll={handleContentScroll}>
                     <VideoBanner
                       audioMeta={currentTask?.audioMeta}
                       videoUrl={currentTask?.formData?.video_url}

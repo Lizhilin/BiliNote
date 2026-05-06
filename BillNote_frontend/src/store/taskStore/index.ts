@@ -62,6 +62,8 @@ interface TaskStore {
   historyHasMore: boolean
   isLoadingHistory: boolean
   searchKeyword: string
+  headerVisible: boolean
+  setHeaderVisible: (visible: boolean) => void
   addPendingTask: (taskId: string, platform: string, formData?: Record<string, unknown>) => void
   updateTaskContent: (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>) => void
   removeTask: (id: string) => void
@@ -81,6 +83,8 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
   historyHasMore: false,
   isLoadingHistory: false,
   searchKeyword: '',
+  headerVisible: true,
+  setHeaderVisible: (visible) => set({ headerVisible: visible }),
 
   addPendingTask: (taskId: string, platform: string, formData?: Record<string, unknown>) =>
     set(state => ({

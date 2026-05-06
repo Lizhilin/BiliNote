@@ -36,6 +36,8 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
     }
   }, [currentTaskId])
 
+  const headerVisible = useTaskStore(s => s.headerVisible)
+  const setHeaderVisible = useTaskStore(s => s.setHeaderVisible)
   const currentTask = tasks.find(t => t.id === currentTaskId)
   const isGenerating = currentTask && !['SUCCESS', 'FAILED', undefined].includes(currentTask?.status)
   const { theme, toggle: toggleTheme } = useTheme()
@@ -120,11 +122,14 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
         }`}
       >
         {/* 顶栏 */}
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4 dark:border-neutral-800">
+        <header className={`flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4 dark:border-neutral-800 overflow-hidden transition-all duration-500 ease-in-out ${
+          headerVisible ? 'max-h-14 opacity-100' : 'max-h-0 opacity-0 border-transparent'
+        }`}>
           <button
             onClick={() => {
               setCurrentTask(null)
               setActivePanel('history')
+              setHeaderVisible(true)
             }}
             className="rounded-lg p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
