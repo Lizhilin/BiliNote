@@ -11,12 +11,14 @@ from app.db.models.user import User
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET") or os.urandom(32).hex()
+_jwt = os.getenv("JWT_SECRET", "").strip()
+# 如果 JWT_SECRET 为空或过短（<16），生成随机 key 并尝试写回 .env
+# 注意：Docker 部署下写回会失败（容器层不持久），需手动在宿主机 .env 配置
+SECRET_KEY = _jwt if len(_jwt) >= 16 else os.urandom(32).hex()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
-# 如果 JWT_SECRET 未设置，写回 .env（仅首次）
-if not os.getenv("JWT_SECRET"):
+if len(_jwt) < 16:
     _env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
     try:
         with open(_env_path, "a") as f:
