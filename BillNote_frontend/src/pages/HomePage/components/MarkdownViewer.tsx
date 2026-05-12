@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, memo, FC, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo, FC, lazy, Suspense } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Button } from '@/components/ui/button.tsx'
 import { Copy, Download, ArrowRight, Play, ExternalLink } from 'lucide-react'
@@ -353,17 +353,42 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
   }, [selectedContent])
 
   // 沉浸式阅读：内容上滑（scroll down）保持隐藏，内容下滑（scroll up）才展示
+  // 阈值取屏幕高度一半，动态跟随窗口变化
+  const scrollUpThresholdRef = useRef(window.innerHeight / 2)
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastScrollYRef = useRef(0)
+  const scrollUpAccumRef = useRef(0)
+  const clearAccum = useCallback(() => { scrollUpAccumRef.current = 0 }, [])
+  useEffect(() => {
+    const onResize = () => { scrollUpThresholdRef.current = window.innerHeight / 2 }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  // 手指松开或滚动结束 → 立即清零累计值，下次上滑重新累计
+  useEffect(() => {
+    const el = contentScrollRef.current
+    if (!el) return
+    el.addEventListener('scrollend', clearAccum)
+    return () => el.removeEventListener('scrollend', clearAccum)
+  }, [clearAccum])
   const handleContentScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop
-    if (scrollTop < lastScrollYRef.current) {
-      // 内容下滑（scroll up）→ 显示 header，停止滚动 2s 后隐藏
-      setHeaderVisible(true)
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
-      scrollTimerRef.current = setTimeout(() => setHeaderVisible(false), 2000)
+    const delta = scrollTop - lastScrollYRef.current
+    if (delta <= 0) {
+      // 内容下滑或静止（scroll up / stationary）→ 累计上滑距离
+      scrollUpAccumRef.current += Math.abs(delta)
+      if (scrollUpAccumRef.current >= scrollUpThresholdRef.current) {
+        // 超过阈值才显示 header，停止滚动 2s 后隐藏
+        setHeaderVisible(true)
+        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+        scrollTimerRef.current = setTimeout(() => setHeaderVisible(false), 2000)
+        scrollUpAccumRef.current = 0
+      }
     }
-    // 内容上滑（scroll down）→ 保持隐藏，不做任何事
+    if (delta > 0) {
+      // 内容上滑（scroll down）→ 重置累计距离，保持隐藏
+      scrollUpAccumRef.current = 0
+    }
     lastScrollYRef.current = scrollTop
   }
 
@@ -510,7 +535,7 @@ const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ status }) => {
                 </Suspense>
               ) : (
                 <>
-                  <div ref={contentScrollRef} className="min-w-0 flex-1 overflow-y-auto" onScroll={handleContentScroll}>
+                  <div ref={contentScrollRef} className="min-w-0 flex-1 overflow-y-auto" onScroll={handleContentScroll} onTouchEnd={clearAccum}>
                     <VideoBanner
                       audioMeta={currentTask?.audioMeta}
                       videoUrl={currentTask?.formData?.video_url}

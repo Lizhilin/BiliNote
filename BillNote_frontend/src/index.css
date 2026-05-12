@@ -202,6 +202,9 @@ html, body, #root {
   background-color: transparent;
   border-top-color: #30363d;
 }
+.dark .markdown-body table tr:nth-child(2n) {
+  background-color: #161b22;
+}
 .dark .markdown-body table td,
 .dark .markdown-body table th {
   border-color: #30363d;
