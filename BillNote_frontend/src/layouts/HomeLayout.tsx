@@ -1,5 +1,6 @@
 import React, { FC, useRef, useState } from 'react'
 import { RefreshCw, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, History as HistoryIcon, Moon, Sun } from 'lucide-react'
+import { cn } from '@/lib/utils.ts'
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +30,7 @@ const HomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
   const middlePanelRef = useRef<ImperativePanelHandle>(null)
   const { theme, toggle: toggleTheme } = useTheme()
   const fetchHistory = useTaskStore(state => state.fetchHistory)
+  const isLoadingHistory = useTaskStore(state => state.isLoadingHistory)
 
   const handleRefresh = () => {
     fetchHistory(1)
@@ -135,7 +137,7 @@ const HomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
                         onClick={handleRefresh}
                         className="text-muted-foreground hover:text-primary cursor-pointer rounded p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
-                        <RefreshCw className="h-4 w-4" />
+                        <RefreshCw className={cn('h-4 w-4', isLoadingHistory && 'animate-spin')} />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>

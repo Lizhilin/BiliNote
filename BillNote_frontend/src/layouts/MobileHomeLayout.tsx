@@ -1,5 +1,6 @@
 import React, { FC, useState, useEffect } from 'react'
 import { Plus, ArrowLeft, SlidersHorizontal, Moon, Sun, RefreshCw } from 'lucide-react'
+import { cn } from '@/lib/utils.ts'
 import { Link } from 'react-router-dom'
 import { useTaskStore } from '@/store/taskStore'
 import { useModelStore } from '@/store/modelStore'
@@ -42,6 +43,7 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
   const isGenerating = currentTask && !['SUCCESS', 'FAILED', undefined].includes(currentTask?.status)
   const { theme, toggle: toggleTheme } = useTheme()
   const fetchHistory = useTaskStore(state => state.fetchHistory)
+  const isLoadingHistory = useTaskStore(state => state.isLoadingHistory)
 
   const handleRefresh = () => {
     fetchHistory(1)
@@ -65,7 +67,7 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
           </div>
           <div className="flex items-center gap-1">
             <button onClick={handleRefresh} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
-              <RefreshCw className="h-5 w-5" />
+              <RefreshCw className={cn('h-5 w-5', isLoadingHistory && 'animate-spin')} />
             </button>
             <button onClick={toggleTheme} className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800">
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
