@@ -121,3 +121,67 @@ Monorepo: 前端(React/Vite) + 后端(FastAPI) + Nginx，Docker Compose 部署
 2. 后端创建任务 → SSE推送状态 → 前端taskStore轮询
 3. 下载→转写→GPT摘要→保存 → 状态变为SUCCESS
 4. 前端MarkdownViewer渲染结果，支持多版本切换
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **BiliNote** (3342 symbols, 6055 relationships, 143 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/BiliNote/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/BiliNote/clusters` | All functional areas |
+| `gitnexus://repo/BiliNote/processes` | All execution flows |
+| `gitnexus://repo/BiliNote/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Work in the Services area (104 symbols) | `.claude/skills/generated/services/SKILL.md` |
+| Work in the Components area (70 symbols) | `.claude/skills/generated/components/SKILL.md` |
+| Work in the Ui area (53 symbols) | `.claude/skills/generated/ui/SKILL.md` |
+| Work in the Routers area (51 symbols) | `.claude/skills/generated/routers/SKILL.md` |
+| Work in the Gpt area (46 symbols) | `.claude/skills/generated/gpt/SKILL.md` |
+| Work in the Downloaders area (43 symbols) | `.claude/skills/generated/downloaders/SKILL.md` |
+| Work in the Douyin_helper area (33 symbols) | `.claude/skills/generated/douyin-helper/SKILL.md` |
+| Work in the Db area (28 symbols) | `.claude/skills/generated/db/SKILL.md` |
+| Work in the Hooks area (27 symbols) | `.claude/skills/generated/hooks/SKILL.md` |
+| Work in the Transcriber area (27 symbols) | `.claude/skills/generated/transcriber/SKILL.md` |
+| Work in the SettingPage area (21 symbols) | `.claude/skills/generated/settingpage/SKILL.md` |
+| Work in the ProviderStore area (16 symbols) | `.claude/skills/generated/providerstore/SKILL.md` |
+| Work in the Cluster_129 area (9 symbols) | `.claude/skills/generated/cluster-129/SKILL.md` |
+| Work in the Layouts area (9 symbols) | `.claude/skills/generated/layouts/SKILL.md` |
+| Work in the DownloaderForm area (7 symbols) | `.claude/skills/generated/downloaderform/SKILL.md` |
+| Work in the ModelForm area (7 symbols) | `.claude/skills/generated/modelform/SKILL.md` |
+| Work in the Cluster_1 area (6 symbols) | `.claude/skills/generated/cluster-1/SKILL.md` |
+| Work in the Kuaishou_helper area (6 symbols) | `.claude/skills/generated/kuaishou-helper/SKILL.md` |
+| Work in the Tests area (6 symbols) | `.claude/skills/generated/tests/SKILL.md` |
+| Work in the Cluster_0 area (3 symbols) | `.claude/skills/generated/cluster-0/SKILL.md` |
+
+<!-- gitnexus:end -->
