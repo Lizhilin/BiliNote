@@ -1,3 +1,3 @@
 FROM bilinote-backend-base:latest
-COPY ./backend /app
+COPY . /app
 CMD ["python", "main.py"]

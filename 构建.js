@@ -36,7 +36,7 @@ function packFrontend() {
   return run('tar', [
     'czf', '/tmp/frontend-src.tar.gz',
     '-C', frontendDir,
-    'src', 'package.json', 'pnpm-lock.yaml', 'vite.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'index.html', '.env', 'deploy/default.conf'
+    'src', 'package.json', 'pnpm-lock.yaml', 'vite.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json', 'index.html', '.env', 'Dockerfile.base', 'deploy/default.conf'
   ]);
 }
 
@@ -55,7 +55,7 @@ async function deployFrontend(isFull) {
     log('--- 前端：全量构建（重建 base） ---', 'blue');
     remoteCmds.push(
       'tar xzf /tmp/frontend-src.tar.gz -C BillNote_frontend/',
-      `docker build -f BillNote_frontend/Dockerfile.base -t bilinote-frontend-base .`,
+      `docker build -f ${REMOTE_DIR}/BillNote_frontend/Dockerfile.base -t bilinote-frontend-base BillNote_frontend/`,
     );
   } else {
     remoteCmds.push('tar xzf /tmp/frontend-src.tar.gz -C BillNote_frontend/');
@@ -75,7 +75,7 @@ async function deployBackend(isFull) {
   if (isFull) {
     log('--- 后端：全量构建（同步全部源码 + 重建 base） ---', 'blue');
     await run('scp', ['-r', path.join(__dirname, 'backend').replace(/\\/g, '/') + '/', `${SERVER}:${REMOTE_DIR}/backend/`]);
-    await ssh(`cd ${REMOTE_DIR} && docker build -f backend/Dockerfile.base -t bilinote-backend-base . && docker-compose build backend && docker-compose up -d backend`);
+    await ssh(`cd ${REMOTE_DIR} && docker build -f ${REMOTE_DIR}/backend/Dockerfile.base -t bilinote-backend-base backend/ && docker-compose build backend && docker-compose up -d backend`);
   } else {
     log('--- 后端：同步 app 代码 ---', 'blue');
     const backendAppDir = path.join(__dirname, 'backend', 'app')
